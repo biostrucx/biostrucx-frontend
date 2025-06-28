@@ -20,7 +20,7 @@ function LoginPage({ onClose }) {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
       await axios.post("https://biostrucx-backend.onrender.com/send-code", {
-        phone: cleanedPhone,
+        phoneNumber: cleanedPhone,
       });
       setStep(2);
       setMessage("✅ Código enviado. Revisa tu SMS.");
@@ -33,17 +33,21 @@ function LoginPage({ onClose }) {
   const verifyCode = async () => {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
-      await axios.post("https://biostrucx-backend.onrender.com/verify-code", {
-        phone: cleanedPhone,
+      const res = await axios.post("https://biostrucx-backend.onrender.com/verify-code", {
+        phoneNumber: cleanedPhone,
         code,
       });
 
-      localStorage.setItem("phoneNumber", cleanedPhone);
-      setMessage("✅ Verificación exitosa. Redirigiendo...");
-      setTimeout(() => {
-        onClose();
-        navigate("/dashboard");
-      }, 1000);
+      if (res.data.success) {
+        localStorage.setItem("phoneNumber", cleanedPhone);
+        setMessage("✅ Verificación exitosa. Redirigiendo...");
+        setTimeout(() => {
+          onClose();
+          navigate("/dashboard");
+        }, 1000);
+      } else {
+        setMessage("❌ Código incorrecto.");
+      }
     } catch (error) {
       console.error("Error en verificación:", error.response?.data || error.message);
       setMessage("❌ Código incorrecto.");
