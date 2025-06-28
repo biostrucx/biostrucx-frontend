@@ -19,7 +19,7 @@ function LoginModal({ onClose }) {
   const sendCode = async () => {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
-      await axios.post("http://localhost:5000/send-code", { phone: cleanedPhone });
+      await axios.post('https://biostrucx-backend.onrender.com/send-code', { phoneNumber });
       setStep(2);
       setMessage("✅ Código enviado. Revisa tu SMS.");
     } catch (error) {
