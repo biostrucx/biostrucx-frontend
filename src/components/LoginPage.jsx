@@ -19,11 +19,9 @@ function LoginPage({ onClose }) {
   const sendCode = async () => {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
-<<<<<<< HEAD
-      await axios.post('https://biostrucx-backend.onrender.com/send-code', { phoneNumber });
-=======
-      await axios.post("https://biostrucx-backend.onrender.com/send-code", { phone: cleanedPhone });
->>>>>>> 04fcb02 (fix: resolved phoneNumber undefined in LoginPage)
+      await axios.post("https://biostrucx-backend.onrender.com/send-code", {
+        phone: cleanedPhone,
+      });
       setStep(2);
       setMessage("✅ Código enviado. Revisa tu SMS.");
     } catch (error) {
@@ -41,10 +39,9 @@ function LoginPage({ onClose }) {
       });
 
       localStorage.setItem("phoneNumber", cleanedPhone);
-
       setMessage("✅ Verificación exitosa. Redirigiendo...");
       setTimeout(() => {
-        onClose(); // Cierra el modal
+        onClose();
         navigate("/dashboard");
       }, 1000);
     } catch (error) {
@@ -110,3 +107,4 @@ function LoginPage({ onClose }) {
 }
 
 export default LoginPage;
+
