@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-function LoginModal({ onClose }) {
+function LoginPage({ onClose }) {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState(1);
@@ -19,7 +19,11 @@ function LoginModal({ onClose }) {
   const sendCode = async () => {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
+<<<<<<< HEAD
       await axios.post('https://biostrucx-backend.onrender.com/send-code', { phoneNumber });
+=======
+      await axios.post("https://biostrucx-backend.onrender.com/send-code", { phone: cleanedPhone });
+>>>>>>> 04fcb02 (fix: resolved phoneNumber undefined in LoginPage)
       setStep(2);
       setMessage("✅ Código enviado. Revisa tu SMS.");
     } catch (error) {
@@ -31,7 +35,7 @@ function LoginModal({ onClose }) {
   const verifyCode = async () => {
     try {
       const cleanedPhone = phone.replace(/\s+/g, "");
-      await axios.post("http://localhost:5000/verify-code", {
+      await axios.post("https://biostrucx-backend.onrender.com/verify-code", {
         phone: cleanedPhone,
         code,
       });
@@ -105,4 +109,4 @@ function LoginModal({ onClose }) {
   );
 }
 
-export default LoginModal;
+export default LoginPage;
