@@ -9,17 +9,18 @@ const LiveLoginModal = ({ onSuccess, onClose }) => {
 
   const handleSendCode = async () => {
     try {
-      await axios.post('http://localhost:5000/send-code', { phoneNumber: phone });
+      await axios.post('https://biostrucx-backend.onrender.com/send-code', { phoneNumber: phone });
       setStep('code');
       setMessage('Código enviado por SMS');
     } catch (err) {
+      console.error(err);
       setMessage('Error al enviar SMS');
     }
   };
 
   const handleVerifyCode = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/verify-code', {
+      const res = await axios.post('https://biostrucx-backend.onrender.com/verify-code', {
         phoneNumber: phone,
         code: code,
       });
@@ -31,6 +32,7 @@ const LiveLoginModal = ({ onSuccess, onClose }) => {
         setMessage('Código incorrecto');
       }
     } catch (err) {
+      console.error(err);
       setMessage('Error al verificar');
     }
   };
@@ -88,3 +90,4 @@ const LiveLoginModal = ({ onSuccess, onClose }) => {
 };
 
 export default LiveLoginModal;
+
