@@ -3,6 +3,7 @@ import LoginModal from "./LoginPage";
 
 function Navbar() {
   const [showLogin, setShowLogin] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const navItems = [
     { label: "Home", href: "#home" },
@@ -14,6 +15,12 @@ function Navbar() {
     { label: "Impact", href: "#impact" },
   ];
 
+  const moreItems = [
+    { label: "Shop", href: "#shop" },
+    { label: "Be a Supplier", href: "#supplier" },
+    { label: "Careers", href: "#careers" },
+  ];
+
   return (
     <header className="bg-white shadow-md px-6 py-4 z-50 relative">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -23,7 +30,7 @@ function Navbar() {
         </div>
 
         {/* Menú central */}
-        <nav className="flex flex-wrap justify-center gap-x-6 text-sm font-medium text-gray-700">
+        <nav className="flex items-center gap-x-6 text-sm font-medium text-gray-700">
           {navItems.map((item) => (
             <a
               key={item.href}
@@ -33,26 +40,37 @@ function Navbar() {
               {item.label}
             </a>
           ))}
-          <div className="flex items-center gap-1">
-            <span className="text-gray-800">BioStrucX</span>
-            <a
-              href="#platform"
-              className="px-1.5 py-0.5 text-xs font-bold text-white bg-red-600 rounded-sm transition-all duration-300 hover:text-red-600 hover:bg-transparent border border-transparent hover:border-red-600"
-            >
-              LIVE
-            </a>
-          </div>
-        </nav>
 
-        {/* Botón de Login */}
-        <div className="flex items-center gap-1">
+          {/* More dropdown */}
+          <div
+            className="relative cursor-pointer"
+            onMouseEnter={() => setIsMoreOpen(true)}
+            onMouseLeave={() => setIsMoreOpen(false)}
+          >
+            <span className="text-gray-800 hover:text-blue-400 transition">More ▾</span>
+            {isMoreOpen && (
+              <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg py-2 w-40 z-50">
+                {moreItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Botón BioStrucX Live */}
           <button
-            className="bg-black text-cyan-400 px-4 py-2 rounded-full hover:bg-cyan-900 transition"
             onClick={() => setShowLogin(true)}
+            className="ml-4 bg-black text-cyan-400 px-4 py-2 rounded-full hover:bg-cyan-900 transition"
           >
             BioStrucX Live
           </button>
-        </div>
+        </nav>
       </div>
 
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
