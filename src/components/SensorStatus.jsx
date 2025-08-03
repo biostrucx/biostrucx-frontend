@@ -1,0 +1,1 @@
+//Vista resumen del sensor
