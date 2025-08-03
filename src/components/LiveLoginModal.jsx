@@ -9,11 +9,8 @@ const LiveLoginModal = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
-//const backendURL =
-  //import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-  //const backendURL = 'https://your-backend-url.com'; // ⬅️ CAMBIA por tu URL en Render si aplica
+  const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
   const sendCode = async () => {
     setLoading(true);
