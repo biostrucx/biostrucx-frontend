@@ -1,47 +1,49 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-function Dashboard() {
-  const [phone, setPhone] = useState("");
-  const navigate = useNavigate();
+const Dashboard = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const storedPhone = localStorage.getItem("phoneNumber");
-    if (storedPhone) {
-      setPhone(storedPhone);
-    } else {
-      // Si no hay número, redirige al inicio
-      navigate("/");
-    }
-  }, [navigate]);
+    const fetchData = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/cliente_1/dashboard_info.json');
+        setData(res.data);
+      } catch (err) {
+        setError('No se pudieron cargar los datos del cliente.');
+      }
+    };
 
-  const handleLogout = () => {
-    localStorage.removeItem("phoneNumber"); // Elimina número
-    navigate("/"); // Redirige al inicio
-  };
+    fetchData();
+  }, []);
+
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
+
+  if (!data) {
+    return <div className="text-gray-500 p-4">Cargando datos del cliente...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4">
-      <div className="bg-white p-8 rounded shadow text-center w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">
-          👋 ¡Hola <span className="text-blue-600">{phone || "usuario"}</span>!
-        </h1>
-        <p className="text-gray-700 mb-2">Tu estructura está estable ✅</p>
-        <p className="text-sm text-gray-500 mb-6">
-          Pronto verás sensores en tiempo real.
-        </p>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded"
-        >
-          Cerrar sesión
-        </button>
+    <div className="max-w-3xl mx-auto mt-12 p-6 bg-white rounded-xl shadow-lg">
+      <h1 className="text-2xl font-bold mb-4 text-center">📊 Dashboard – {data.nombre}</h1>
+
+      <div className="space-y-3 text-gray-800">
+        <p><strong>Elemento:</strong> {data.elemento}</p>
+        <p><strong>Dimensiones (cm):</strong> {data.dimensiones_cm.base} × {data.dimensiones_cm.altura} × {data.dimensiones_cm.largo}</p>
+        <p><strong>Material:</strong> {data.material.tipo}</p>
+        <ul className="ml-6 list-disc">
+          <li><strong>f'c:</strong> {data.material["f'c_MPa"]} MPa</li>
+          <li><strong>E:</strong> {data.material.E_MPa} MPa</li>
+          <li><strong>Densidad:</strong> {data.material.densidad_kg_m3} kg/m³</li>
+        </ul>
+        <p><strong>Sensores activos:</strong> {data.sensores.join(', ')}</p>
+        <p><strong>Simulación activa:</strong> {data.simulacion_activa ? '✅ Sí' : '⛔ No'}</p>
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;
-
-
-

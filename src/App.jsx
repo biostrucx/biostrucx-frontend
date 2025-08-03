@@ -1,21 +1,32 @@
-import LoginPage from './components/LoginPage';
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-console.log("Estado del modal:", showModal);
+import LoginPage from './components/LoginPage';
+import Dashboard from './components/Dashboard';
 
 function App() {
-return (
- <div className="bg-black text-white min-h-screen relative z-0">
+  return (
+    <Router>
+      <div className="bg-black text-white min-h-screen relative z-0">
+        <Navbar />
 
-    <Navbar />
-       <LoginPage />
-    <HeroSection />
-    {/* Aquí agregaremos luego la sección Our Mission, etc. */}
-  </div>
-);
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <LoginPage />
+                <HeroSection />
+              </>
+            }
+          />
+          <Route path="/dashboard/cliente_1" element={<Dashboard />} />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
 export default App;
-
-
