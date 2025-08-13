@@ -1,1 +1,0 @@
-//# Diagnóstico IA y simulación
