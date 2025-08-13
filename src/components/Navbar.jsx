@@ -6,13 +6,13 @@ function Navbar() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const navItems = [
-    { label: "Home", href: "#home" },
-    { label: "Our Mission", href: "#mission" },
-    { label: "BioStruct Design", href: "#design" },
-    { label: "BioX Materials", href: "#materials" },
-    { label: "Modular Structures", href: "#modular" },
-    { label: "Launchpad", href: "#launchpad" },
-    { label: "Impact", href: "#impact" },
+    { label: "HOME", href: "#home" },
+    { label: "OUR MiSSION", href: "#mission" },
+    { label: "BiOSTRUCX DESIGN", href: "#design" },
+    { label: "BiOX MATERIALS", href: "#materials" },
+    { label: "MODULAR STRUCTURES", href: "#modular" },
+    { label: "LAUNCHPAD", href: "#launchpad" },
+    { label: "GLOBAL WARMING IMPACT", href: "#impact" },
   ];
 
   const moreItems = [
@@ -26,7 +26,7 @@ function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="text-2xl font-bold text-gray-800 tracking-wide">
-          BioStrucX
+          BiOSTRUCX
         </div>
 
         {/* Menú central */}
