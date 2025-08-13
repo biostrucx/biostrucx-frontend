@@ -63,18 +63,20 @@ function Navbar() {
             )}
           </div>
 
-          {/* Botón de Twitter con logo */}
+          {/* Botón de Twitter con logo SVG inline */}
           <a
             href="https://x.com/BiostrucX"
             target="_blank"
             rel="noopener noreferrer"
             className="ml-4 flex items-center gap-2 px-4 py-2 border border-white rounded-full hover:bg-white hover:text-black transition"
           >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/5/53/X_logo_2023.svg"
-              alt="Twitter Logo"
-              className="w-4 h-4"
-            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 1200 1227"
+              className="w-4 h-4 fill-current"
+            >
+              <path d="M714.163 519.284L1160.89 0H1056.23L671.137 450.887L356.375 0H0L468.508 681.821L0 1226.9H104.671L509.384 752.949L843.625 1226.9H1200L714.137 519.284H714.163ZM557.341 686.169L515.249 626.988L142.963 79.6946H308.583L617.996 526.417L660.088 585.598L1047.17 1147.21H881.554L557.315 686.169H557.341Z" />
+            </svg>
             Twitter
           </a>
 
