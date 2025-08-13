@@ -22,20 +22,20 @@ function Navbar() {
   ];
 
   return (
-    <header className="bg-black px-8 py-4 z-50 relative">
+    <header className="bg-black text-white shadow-md px-6 py-4 z-50 relative">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="text-2xl font-bold text-white tracking-wider">
+        <div className="text-2xl font-bold tracking-wide">
           BiOSTRUCX
         </div>
 
         {/* Menú central */}
-        <nav className="flex items-center gap-x-8 text-sm font-medium text-white">
+        <nav className="flex items-center gap-x-6 text-sm font-medium">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="relative hover:text-cyan-400 transition-all duration-300 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-cyan-400 after:opacity-0 hover:after:opacity-100"
+              className="relative hover:text-cyan-400 transition-all duration-300 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-cyan-500 after:opacity-0 hover:after:opacity-100"
             >
               {item.label}
             </a>
@@ -49,12 +49,12 @@ function Navbar() {
           >
             <span className="hover:text-cyan-400 transition">More ▾</span>
             {isMoreOpen && (
-              <div className="absolute right-0 mt-2 bg-black border border-gray-700 rounded shadow-lg py-2 w-44 z-50">
+              <div className="absolute right-0 mt-2 bg-black border border-gray-700 rounded shadow-lg py-2 w-40 z-50">
                 {moreItems.map((item) => (
                   <a
                     key={item.href}
                     href={item.href}
-                    className="block px-4 py-2 text-sm text-white hover:bg-gray-800"
+                    className="block px-4 py-2 text-sm hover:bg-gray-800"
                   >
                     {item.label}
                   </a>
@@ -63,19 +63,15 @@ function Navbar() {
             )}
           </div>
 
-          {/* Botón de Twitter con logo SVG inline */}
+          {/* Botón Twitter */}
           <a
             href="https://x.com/BiostrucX"
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-4 flex items-center gap-2 px-4 py-2 border border-white rounded-full hover:bg-white hover:text-black transition"
+            className="flex items-center gap-2 bg-black border border-white px-4 py-2 rounded-full hover:bg-gray-900 transition"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 1200 1227"
-              className="w-4 h-4 fill-current"
-            >
-              <path d="M714.163 519.284L1160.89 0H1056.23L671.137 450.887L356.375 0H0L468.508 681.821L0 1226.9H104.671L509.384 752.949L843.625 1226.9H1200L714.137 519.284H714.163ZM557.341 686.169L515.249 626.988L142.963 79.6946H308.583L617.996 526.417L660.088 585.598L1047.17 1147.21H881.554L557.315 686.169H557.341Z" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 1200 1227" className="w-4 h-4">
+              <path d="M714.163 519.284 1160.89 0H1055.8L667.137 450.887 357.328 0H0l468.71 682.625L0 1226.95h105.09l408.36-474.78 329.473 474.78H1200L714.137 519.284h.026Zm-144.326 167.88-47.386-67.92L143.052 79.694h162.984l304.35 436.236 47.387 67.92 393.224 563.456H888.013L569.837 687.165Z"/>
             </svg>
             Twitter
           </a>
@@ -83,7 +79,7 @@ function Navbar() {
           {/* Botón BioStrucX Live */}
           <button
             onClick={() => setShowLogin(true)}
-            className="ml-4 bg-cyan-500 text-black px-4 py-2 rounded-full hover:bg-cyan-700 hover:text-white transition"
+            className="ml-4 bg-cyan-500 text-black px-4 py-2 rounded-full hover:bg-cyan-400 transition"
           >
             BioStrucX Live
           </button>
@@ -96,5 +92,4 @@ function Navbar() {
 }
 
 export default Navbar;
-
 
