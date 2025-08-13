@@ -28,7 +28,8 @@ function HeroSection() {
           Materials that Heal.
           <br />
           A Planet that Breathes.
-
+          </h1>
+        </div>
       {/* Modal de login por SMS */}
       {showModal && !isLogged && (
         <LiveLoginModal
