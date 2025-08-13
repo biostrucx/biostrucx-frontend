@@ -63,13 +63,18 @@ function Navbar() {
             )}
           </div>
 
-          {/* Botón de Twitter */}
+          {/* Botón de Twitter con logo */}
           <a
             href="https://x.com/BiostrucX"
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-4 px-4 py-2 border border-white rounded-full hover:bg-white hover:text-black transition"
+            className="ml-4 flex items-center gap-2 px-4 py-2 border border-white rounded-full hover:bg-white hover:text-black transition"
           >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/5/53/X_logo_2023.svg"
+              alt="Twitter Logo"
+              className="w-4 h-4"
+            />
             Twitter
           </a>
 
