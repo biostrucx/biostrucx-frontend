@@ -28,23 +28,6 @@ function HeroSection() {
           Materials that Heal.
           <br />
           A Planet that Breathes.
-        </h1>
-
-        <div className="mt-10 flex flex-wrap justify-center gap-6">
-          <a
-            href="#vision"
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition duration-300"
-          >
-            
-          </a>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-red-600 hover:bg-transparent border-2 border-red-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition duration-300"
-          >
-           
-          </button>
-        </div>
-      </div>
 
       {/* Modal de login por SMS */}
       {showModal && !isLogged && (
