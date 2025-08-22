@@ -1,11 +1,12 @@
-import { fetchJson } from './api';
+// src/services/sensors.js
+import { get } from './api';
 
-export function getLatest(clientid) {
-  return fetchJson(`/api/sensors/latest/${encodeURIComponent(clientid)}`);
+// Lectura del último registro por cliente
+export function fetchLatest(clientid) {
+  return get(`/api/sensors/latest/${clientid}`);
 }
 
-export function getStream(clientid, window = '5m', limit = 300) {
-  const q = `?window=${encodeURIComponent(window)}&limit=${limit}`;
-  return fetchJson(`/api/sensors/stream/${encodeURIComponent(clientid)}${q}`);
+// Lectura del stream/ventana de tiempo (por defecto 24h, 300 filas)
+export function fetchStream(clientid, { window = '24h', limit = 300 } = {}) {
+  return get(`/api/sensors/stream/${clientid}?window=${window}&limit=${limit}`);
 }
-
