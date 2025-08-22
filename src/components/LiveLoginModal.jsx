@@ -1,8 +1,10 @@
+// LiveLoginModal.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { BASE as backendURL } from '../services/api';   // <— usa tu BASE
 
-const LiveLoginModal = () => {
+const LiveLoginModal = ({ is_open = true, on_close = () => {} }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState(1);
@@ -10,19 +12,14 @@ const LiveLoginModal = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
   const sendCode = async () => {
     setLoading(true);
     setError('');
     try {
       const res = await axios.post(`${backendURL}/send-code`, { phoneNumber });
-      if (res.data.success) {
-        setStep(2);
-      } else {
-        setError('No se pudo enviar el código.');
-      }
-    } catch (err) {
+      if (res.data.success) setStep(2);
+      else setError('No se pudo enviar el código.');
+    } catch {
       setError('Error al enviar código.');
     }
     setLoading(false);
@@ -40,11 +37,13 @@ const LiveLoginModal = () => {
       } else {
         setError('Código incorrecto o expirado.');
       }
-    } catch (err) {
+    } catch {
       setError('Error al verificar el código.');
     }
     setLoading(false);
   };
+
+  if (!is_open) return null; // respeta la prop desde App.jsx
 
   return (
     <div className="max-w-md mx-auto mt-12 p-6 bg-white rounded-xl shadow-md space-y-4">
@@ -88,11 +87,11 @@ const LiveLoginModal = () => {
         </>
       )}
 
-      {error && (
-        <div className="text-red-600 text-center mt-2">
-          {error}
-        </div>
-      )}
+      {error && <div className="text-red-600 text-center mt-2">{error}</div>}
+
+      <button onClick={on_close} className="w-full mt-2 py-2 border rounded">
+        Cerrar
+      </button>
     </div>
   );
 };
