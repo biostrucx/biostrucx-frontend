@@ -15,7 +15,7 @@ export default function Dashboard() {
       setErr('');
       const [lRes, sRes] = await Promise.all([
         fetch(`${BASE}/api/sensors/latest/${clientid}`),
-        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
+        fetch(`${BASE}/api/sensors/stream/${clientid}?window=24h&limit=300`)
       ]);
       const l = await lRes.json();
       const s = await sRes.json();
