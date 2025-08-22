@@ -1,12 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import LiveStream from './live_stream';
 
-const Dashboard = () => {
-  useEffect(() => {
-    window.location.href = '/dashboard_x';
-  }, []);
-
-  return null; // No renderiza nada, solo redirige
-};
-
-export default Dashboard;
-
+export default function Dashboard() {
+  return <LiveStream clientid="cliente_1" window="5m" />;
+}
