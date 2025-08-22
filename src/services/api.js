@@ -1,41 +1,23 @@
 // src/services/api.js
-const fromCRA    = process.env.REACT_APP_BACKEND_URL;
-const fromVite   = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_BACKEND_URL : undefined;
-const fromWindow = typeof window !== 'undefined' ? window.__BACKEND_URL__ : undefined;
 
-export const BASE =
-  (fromCRA || fromVite || fromWindow || 'https://api.biostrucx.com').replace(/\/$/, '');
+// Toma la URL del backend desde Render/Vite
+export const BASE = import.meta.env.VITE_BACKEND_URL || 'https://api.biostrucx.com';
 
-// Helper interno para todas las requests (no exportado)
+// Helper genérico para requests, sin caché
 async function request(method, path, body) {
-  const opts = { method };
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`; // anti-cache
+  const headers = { 'Cache-Control': 'no-store' };
+  const opts = { method, headers, cache: 'no-store' };
+
   if (body !== undefined) {
-    opts.headers = { 'Content-Type': 'application/json' };
+    opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body ?? {});
   }
-  const res = await fetch(`${BASE}${path}`, opts);
+
+  const res = await fetch(url, opts);
   if (!res.ok) throw new Error(`${method} ${path} ${res.status}`);
   return res.json();
 }
 
-// === Exports originales (sin cambios) ===
-export async function get(path) {
-  return request('GET', path);
-}
-
-export async function post(path, body) {
-  return request('POST', path, body);
-}
-
-// === Nuevos exports solicitados ===
-export async function put(path, body) {
-  return request('PUT', path, body);
-}
-
-export async function del(path, body) {
-  return request('DELETE', path, body);
-}
-
-// === Compatibilidad con código antiguo ===
-// 'fetchJson' existirá y actuará como un alias de 'get'
-export const fetchJson = get;
+export const get  = (path) => request('GET',  path);
+export const post = (path, body) => request('POST', path, body);
