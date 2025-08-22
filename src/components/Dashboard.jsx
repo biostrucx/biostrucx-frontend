@@ -1,4 +1,3 @@
-// src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BASE } from '../services/api';
@@ -15,7 +14,7 @@ export default function Dashboard() {
       setErr('');
       const [lRes, sRes] = await Promise.all([
         fetch(`${BASE}/api/sensors/latest/${clientid}`),
-        fetch(`${BASE}/api/sensors/stream/${clientid}?window=24h&limit=300`)
+        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
       ]);
       const l = await lRes.json();
       const s = await sRes.json();
@@ -29,14 +28,16 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    fetchData();                 // 1ª carga
+    fetchData(); // 1ª carga
     const id = setInterval(fetchData, 5000); // refresco cada 5s
     return () => clearInterval(id);
   }, [clientid]);
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">BioStrucX Live — {clientid}</h2>
+      <h2 className="text-xl font-bold mb-4">
+        BioStrucX Live — {clientid}
+      </h2>
 
       {loading && <div>Cargando…</div>}
       {err && <div className="text-red-400">{err}</div>}
@@ -44,7 +45,7 @@ export default function Dashboard() {
       {/* Último dato */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <Card title="Último ts" value={latest ? new Date(latest.ts).toLocaleString() : '—'} />
-        <Card title="disp_mm"  value={latest?.disp_mm  ?? '—'} />
+        <Card title="disp_mm" value={latest?.disp_mm ?? '—'} />
         <Card title="voltage_dc" value={latest?.voltage_dc ?? '—'} />
         <Card title="adc_raw" value={latest?.adc_raw ?? '—'} />
       </div>
@@ -79,7 +80,11 @@ export default function Dashboard() {
               </tr>
             ))}
             {stream.length === 0 && (
-              <tr><td className="py-4 opacity-60" colSpan={4}>Sin datos aún.</td></tr>
+              <tr>
+                <td className="py-4 opacity-60" colSpan={4}>
+                  Sin datos aún.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -106,7 +111,11 @@ function Sparkline({ data = [] }) {
   return (
     <div className="flex items-end gap-[2px] h-32">
       {data.map((v, i) => (
-        <div key={i} style={{ height: `${Math.round(norm(v)*100)}%` }} className="w-1 bg-white/70" />
+        <div
+          key={i}
+          style={{ height: `${Math.round(norm(v) * 100)}%` }}
+          className="w-1 bg-white/70"
+        />
       ))}
     </div>
   );
