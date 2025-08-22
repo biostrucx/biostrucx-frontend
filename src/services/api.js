@@ -1,23 +1,24 @@
 // src/services/api.js
 
-// Toma la URL del backend desde Render/Vite
-export const BASE = import.meta.env.VITE_BACKEND_URL || 'https://api.biostrucx.com';
+const fromCRA   = process.env.REACT_APP_BACKEND_URL;
+const fromVite  = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_BACKEND_URL : undefined;
+const fromWindow = window.__BACKEND_URL__; // opcional si algún día lo inyectas en runtime
 
-// Helper genérico para requests, sin caché
-async function request(method, path, body) {
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}_t=${Date.now()}`; // anti-cache
-  const headers = { 'Cache-Control': 'no-store' };
-  const opts = { method, headers, cache: 'no-store' };
+export const BASE =
+  (fromCRA || fromVite || fromWindow || 'https://api.biostrucx.com').replace(/\/$/, '');
 
-  if (body !== undefined) {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(body ?? {});
-  }
-
-  const res = await fetch(url, opts);
-  if (!res.ok) throw new Error(`${method} ${path} ${res.status}`);
+export async function get(path) {
+  const res = await fetch(`${BASE}${path}`);
+  if (!res.ok) throw new Error(`GET ${path} ${res.status}`);
   return res.json();
 }
 
-export const get  = (path) => request('GET',  path);
-export const post = (path, body) => request('POST', path, body);
+export async function post(path, body) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!res.ok) throw new Error(`POST ${path} ${res.status}`);
+  return res.json();
+}
