@@ -1,32 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
+import LiveLoginModal from './components/LiveLoginModal';
 
-function App() {
+export default function App() {
+  const [show_login, set_show_login] = useState(false);
+
   return (
     <Router>
-      <div className="bg-black text-white min-h-screen relative z-0">
-        <Navbar />
-
+      <div className="bg-black text-white min-h-screen">
+        <Navbar on_open_login={() => set_show_login(true)} />
         <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <LoginPage />
-                <HeroSection />
-              </>
-            }
-          />
-          <Route path="/dashboard/cliente_1" element={<Dashboard />} />
+          <Route path="/" element={<HeroSection />} />
+          <Route path="/dashboard/:clientid" element={<Dashboard />} />
         </Routes>
+
+        <LiveLoginModal
+          is_open={show_login}
+          on_close={() => set_show_login(false)}
+        />
       </div>
     </Router>
   );
 }
-
-export default App;
