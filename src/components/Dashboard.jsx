@@ -12,21 +12,23 @@ export default function Dashboard() {
   const [now, setNow] = useState(Date.now());
 
   async function fetchData() {
-    try {
-      setErr('');
-      const [lRes, sRes] = await Promise.all([
-        fetch(`${BASE}/api/sensors/latest/${clientid}`),
-        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
-      ]);
-      const l = await lRes.json();
-      const s = await sRes.json();
-      setLatest(l || null);
-      setStream(Array.isArray(s) ? s : []);
-    } catch (e) {
-      setErr('No se pudo cargar datos.');
-    } finally {
-      setLoading(false);
-    }
+  try {
+    setErr('');
+    const [lRes, sRes] = await Promise.all([
+      fetch(`${BASE}/api/sensors/latest/${clientid}`),
+      fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
+    ]);
+    const l = await lRes.json();
+    const s = await sRes.json();
+
+    // 👇 Conversión del ts a número (epoch ms) para LiveChart
+    setLatest(l || null);
+    setStream(Array.isArray(s) ? s.map(d => ({ ...d, ts: new Date(d.ts).getTime() })) : []);
+  } catch (e) {
+    setErr('No se pudo cargar datos.');
+  } finally {
+    setLoading(false);
+  }
   }
 
   useEffect(() => {
