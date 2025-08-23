@@ -1,3 +1,4 @@
+// src/components/LiveStream.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import { getStream, getLatest } from '../services/sensors';
 
@@ -15,8 +16,15 @@ export default function LiveStream({ clientid = 'cliente_1', window = '5m', limi
           getStream(clientid, window, limit),
           getLatest(clientid),
         ]);
-        if (!abort) { setRows(stream); setLatest(last); }
-      } catch (e) { /* opcional: console.error(e) */ }
+
+        if (!abort) {
+          // 👇 convertir ts a número (epoch ms) en stream y latest
+          setRows(Array.isArray(stream) ? stream.map(r => ({ ...r, ts: new Date(r.ts).getTime() })) : []);
+          setLatest(last ? { ...last, ts: new Date(last.ts).getTime() } : null);
+        }
+      } catch (e) {
+        // opcional: console.error(e)
+      }
     }
 
     tick();
