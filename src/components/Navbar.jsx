@@ -6,14 +6,30 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-black/80">
-      <div className="text-2xl font-bold">BioStrucX</div>
+    <nav className="flex items-center justify-between px-6 py-3 bg-black/80">
+      {/* Izquierda: Brand + Twitter */}
+      <div className="flex items-center gap-3">
+        <div className="text-2xl font-bold text-white">BioStrucX</div>
 
-      <div className="flex items-center gap-6 text-sm">
-        <button
-          onClick={() => navigate('/')}
-          className="hover:opacity-80"
+        {/* Botón Twitter */}
+        <a
+          href="https://x.com/BiostrucX"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/30 text-white/90 hover:bg-white hover:text-black transition"
+          aria-label="Abrir Twitter de BioStrucX"
         >
+          {/* Icono X/Twitter (SVG ligero) */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
+          </svg>
+          <span className="text-sm font-medium">Twitter</span>
+        </a>
+      </div>
+
+      {/* Derecha: Home + BioStrucX LIVE (estilo NASA) */}
+      <div className="flex items-center gap-6 text-sm">
+        <button onClick={() => navigate('/')} className="text-white/90 hover:opacity-80">
           Home
         </button>
 
