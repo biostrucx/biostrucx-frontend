@@ -2,8 +2,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './components/Dashboard';
-import Launchpad from './pages/Launchpad';
-import GlobalWarming from './pages/GlobalWarming';
+import Launchpad from './components/Launchpad';
+import GlobalWarming from './components/GlobalWarming';
 
 export default function App() {
   return (
