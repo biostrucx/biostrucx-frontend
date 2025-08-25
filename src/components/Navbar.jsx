@@ -94,7 +94,7 @@ const Navbar = () => {
         className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? 'max-h-64' : 'max-h-0'}`}
       >
         <div className="px-4 pb-4 pt-2 flex flex-col gap-2 text-sm border-t border-white/10">
-          <button onClick={() => go('/')} className="text-left px-3 py-2 rounded hover:bg-white/10">Home</button>
+          <button onClick={() => go('/')} className="text-left px-3 py-2 rounded hover:bg-white/10">HOME</button>
           <button onClick={() => go('/launchpad')} className="text-left px-3 py-2 rounded hover:bg-white/10">LAUNCHPAD</button>
           <button onClick={() => go('/global-warming')} className="text-left px-3 py-2 rounded hover:bg-white/10">GLOBAL WARMING</button>
           <button onClick={() => go('/dashboard/jeimie')} className="text-left px-3 py-2 rounded hover:bg-white/10">
