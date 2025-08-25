@@ -1,9 +1,11 @@
+// src/pages/Launchpad.jsx
 export default function Launchpad() {
   return (
-    <section className="max-w-5xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-extrabold mb-6">Launchpad</h1>
-      <p className="text-gray-300">Contenido inicial del Launchpad.</p>
-    </section>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-2">LAUNCHPAD</h1>
+      <p className="opacity-80">
+        Aquí va tu hub de herramientas / enlaces / módulos de BioStrucX.
+      </p>
+    </div>
   );
 }
-
