@@ -1,7 +1,6 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
 import Dashboard from './components/Dashboard';
 import Launchpad from './pages/Launchpad';
 import GlobalWarming from './pages/GlobalWarming';
