@@ -14,13 +14,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HeroSection />} />
         <Route path="/dashboard/:clientid" element={<Dashboard />} />
-      </Routes>
-    </div>
-  );
-   {/* NUEVAS RUTAS INDEPENDIENTES */}
         <Route path="/launchpad" element={<Launchpad />} />
         <Route path="/global-warming" element={<GlobalWarming />} />
+        {/* opcional: redirige/cae al home */}
+        <Route path="*" element={<HeroSection />} />
       </Routes>
-    </BrowserRouter>
+    </div>
   );
 }
