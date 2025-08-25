@@ -7,7 +7,7 @@ const Navbar = () => {
   const [open, setOpen] = useState(false); // menú móvil
 
   const go = (path) => {
-    setOpen(false);        // cierra menú en móvil al navegar
+    setOpen(false);        // cierra menú al navegar en móvil
     navigate(path);
   };
 
@@ -38,17 +38,25 @@ const Navbar = () => {
           </a>
         </div>
 
-        {/* Botón hamburguesa (solo móvil) */}
+        {/* Botón "More" (hamburguesa) solo móvil */}
         <button
-          className="md:hidden inline-flex items-center justify-center p-2 rounded hover:bg-white/10 text-white"
+          className="md:hidden inline-flex items-center justify-center gap-2 p-2 text-white"
           onClick={() => setOpen((v) => !v)}
           aria-label="Abrir menú"
           aria-expanded={open}
         >
-          {/* ícono hamburguesa / X */}
-          <span className={`block h-0.5 w-5 bg-current transition ${open ? 'rotate-45 translate-y-1' : ''}`}></span>
-          <span className={`block h-0.5 w-5 bg-current my-1 transition ${open ? 'opacity-0' : ''}`}></span>
-          <span className={`block h-0.5 w-5 bg-current transition ${open ? '-rotate-45 -translate-y-1' : ''}`}></span>
+          {/* Icono hamburguesa / X */}
+          <div className="flex flex-col">
+            <span className={`block h-0.5 w-5 bg-current transition ${open ? 'rotate-45 translate-y-1' : ''}`}></span>
+            <span className={`block h-0.5 w-5 bg-current my-1 transition ${open ? 'opacity-0' : ''}`}></span>
+            <span className={`block h-0.5 w-5 bg-current transition ${open ? '-rotate-45 -translate-y-1' : ''}`}></span>
+          </div>
+
+          {/* Texto "More" con subrayado fijo */}
+          <span className="relative text-sm font-semibold">
+            More
+            <span className="absolute left-0 -bottom-0.5 w-full h-[2px] bg-white"></span>
+          </span>
         </button>
 
         {/* Derecha: menú desktop */}
@@ -99,7 +107,6 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
 
 
 
