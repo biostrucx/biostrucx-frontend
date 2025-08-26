@@ -6,7 +6,6 @@ import { ArrowRight, Globe2, Waves, Activity } from "lucide-react";
 // ⚠️ Archivos en: src/assets/
 import EarthVideo from "../assets/earth-loop.mp4";
 
-
 export default function GlobalWarming() {
   const cards = [
     {
@@ -52,7 +51,8 @@ export default function GlobalWarming() {
       {/* ===== Background video capa ===== */}
       <div className="absolute inset-0 z-0">
         <video
-          className="h-full w-full object-cover opacity-80"
+          // 👇 Opción 1: video completo en móvil (object-contain) y cover en desktop
+          className="h-full w-full object-contain md:object-cover opacity-80"
           src={EarthVideo}
           autoPlay
           muted
@@ -161,7 +161,6 @@ export default function GlobalWarming() {
           energy systems like solar-powered sensors for sustainable projects.
         </p>
       </div>
-      {/* 👆 Importante: este </div> cierra el contenedor de contenido */}
     </section>
   );
 }
