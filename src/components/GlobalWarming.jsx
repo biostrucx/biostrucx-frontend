@@ -1,11 +1,9 @@
 // src/components/GlobalWarming.jsx
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Globe2, Waves, Flame, Activity } from "lucide-react";
+import { ArrowRight, Globe2, Waves, Activity } from "lucide-react";
 
-// ⚠️ Place these files in: src/assets/
-//  - earth-loop.mp4   (short looping Earth/space clip)
-//  - global-warming.jpg (fallback image)
+// ⚠️ Archivos en: src/assets/
 import EarthVideo from "../assets/earth-loop.mp4";
 import EarthImage from "../assets/global-warming.png";
 
@@ -29,7 +27,7 @@ export default function GlobalWarming() {
       accent: "bg-amber-400/60",
       stat: "+ 2.0–2.5°C",
       blurb:
-        "Higher loads, fatigue and deflections. Real‑time data becomes essential for decisions.",
+        "Higher loads, fatigue and deflections. Real-time data becomes essential for decisions.",
     },
     {
       key: "failure",
@@ -45,30 +43,32 @@ export default function GlobalWarming() {
 
   const stats = [
     { icon: Globe2, label: "Climate focus", value: "Structures first" },
-    { icon: Waves, label: "Sea‑level data", value: "Live soon" },
-    { icon: Activity, label: "Sensor twin", value: "Real‑time ready" },
+    { icon: Waves, label: "Sea-level data", value: "Live soon" },
+    { icon: Activity, label: "Sensor twin", value: "Real-time ready" },
   ];
 
   return (
     <section className="relative min-h-[calc(100vh-72px)] w-full overflow-hidden bg-black text-white">
-      {/* Background video */}
-      <div className="absolute inset-0 -z-10">
+      {/* ===== Background video capa ===== */}
+      <div className="absolute inset-0 z-0">
         <video
-          className="h-full w-full object-cover opacity-50"
+          className="h-full w-full object-cover opacity-80"
           src={EarthVideo}
           poster={EarthImage}
           autoPlay
           muted
           loop
           playsInline
+          preload="auto"
         />
-        {/* Dark and brand gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/95" />
+        {/* Overlays más suaves para no ocultar el video */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
         <div className="pointer-events-none absolute -left-40 -top-40 h-[40rem] w-[40rem] rounded-full bg-emerald-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 bottom-0 h-[36rem] w-[36rem] rounded-full bg-rose-500/10 blur-3xl" />
       </div>
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-16 md:py-24">
+      {/* ===== Contenido por encima del video ===== */}
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-10 px-6 py-16 md:py-24">
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -81,8 +81,8 @@ export default function GlobalWarming() {
             Global Warming
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-white/70 md:text-base">
-            BioStrucX aligns structural design, smart monitoring and sustainable materials—
-            a Space‑grade approach for an overheated planet.
+            BioStrucX aligns structural design, smart monitoring and sustainable
+            materials— a Space-grade approach for an overheated planet.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <a
@@ -92,7 +92,7 @@ export default function GlobalWarming() {
               Explore our Climate Mission <ArrowRight size={18} />
             </a>
             <a
-              href="/dashboard/jeimie"
+              href="/dashboard/cliente_1"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
             >
               See Live Demo
@@ -111,10 +111,14 @@ export default function GlobalWarming() {
               transition={{ duration: 0.5, delay: 0.1 * idx }}
               className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur"
             >
-              <div className={`absolute inset-0 -z-10 bg-gradient-to-b ${c.tone} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
+              <div
+                className={`absolute inset-0 -z-10 bg-gradient-to-b ${c.tone} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+              />
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold md:text-2xl">{c.title}</h3>
-                <span className={`rounded-full ${c.accent} px-2.5 py-1 text-xs font-semibold text-black/90`}>
+                <span
+                  className={`rounded-full ${c.accent} px-2.5 py-1 text-xs font-semibold text-black/90`}
+                >
                   {c.tag}
                 </span>
               </div>
@@ -122,8 +126,6 @@ export default function GlobalWarming() {
                 {c.stat}
               </div>
               <p className="mt-4 text-sm text-white/75">{c.blurb}</p>
-
-              {/* Hover reveal bar */}
               <div className="mt-8 h-1 w-full origin-left scale-x-0 bg-gradient-to-r from-white/60 to-white/0 transition-transform duration-300 group-hover:scale-x-100" />
             </motion.div>
           ))}
@@ -151,11 +153,13 @@ export default function GlobalWarming() {
         </motion.div>
 
         {/* Footnote */}
-        <p className="mx-auto max-w-3xl text-center text-xs text-white/50">
-          This page is a visual mockup. Live climate streams will be connected to BioStrucX Live
-          and mapped to each project’s digital twin.
-        </p>
-      </div>
+        <p className="mx-auto max-w-3xl text-center text-sm font-medium bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent animate-pulse">
+  Through advanced sensors and integrated biomaterials, BioStrucX Live monitors how structures adapt over time, 
+  preventing unnecessary demolitions and reducing carbon emissions, while integrating renewable energy systems 
+  like solar-powered sensors for sustainable projects.
+</p>
+      
     </section>
   );
 }
+
