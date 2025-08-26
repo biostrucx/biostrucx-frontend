@@ -84,18 +84,20 @@ export default function GlobalWarming() {
             BioStrucX aligns structural design, smart monitoring and sustainable
             materials— a Space-grade approach for an overheated planet.
           </p>
+
+          {/* === BOTONES ACTUALIZADOS === */}
           <div className="mt-6 flex items-center justify-center gap-3">
             <a
               href="/launchpad"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/20"
             >
-              Explore our Climate Mission <ArrowRight size={18} />
+              Explore our Launchpad for Climate Innovation <ArrowRight size={18} />
             </a>
             <a
               href="/dashboard/cliente_1"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
             >
-              See Live Demo
+              Meet Our First Customer
             </a>
           </div>
         </motion.div>
@@ -153,13 +155,14 @@ export default function GlobalWarming() {
         </motion.div>
 
         {/* Footnote */}
-        <p className="mx-auto max-w-3xl text-center text-sm font-medium bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent animate-pulse">
-  Through advanced sensors and integrated biomaterials, BioStrucX Live monitors how structures adapt over time, 
-  preventing unnecessary demolitions and reducing carbon emissions, while integrating renewable energy systems 
-  like solar-powered sensors for sustainable projects.
-</p>
-      
+        <p className="mx-auto max-w-3xl text-center text-sm font-medium bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+          Through advanced sensors and integrated biomaterials, BioStrucX Live
+          monitors how structures adapt over time, preventing unnecessary
+          demolitions and reducing carbon emissions, while integrating renewable
+          energy systems like solar-powered sensors for sustainable projects.
+        </p>
+      </div>
+      {/* 👆 Importante: este </div> cierra el contenedor de contenido */}
     </section>
   );
 }
-
