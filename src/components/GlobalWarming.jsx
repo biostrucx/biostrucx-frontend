@@ -7,7 +7,7 @@ import { ArrowRight, Globe2, Waves, Flame, Activity } from "lucide-react";
 //  - earth-loop.mp4   (short looping Earth/space clip)
 //  - global-warming.jpg (fallback image)
 import EarthVideo from "../assets/earth-loop.mp4";
-import EarthImage from "../assets/global-warming.jpg";
+import EarthImage from "../assets/global-warming.png";
 
 export default function GlobalWarming() {
   const cards = [
