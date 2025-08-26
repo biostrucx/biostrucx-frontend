@@ -54,7 +54,6 @@ export default function GlobalWarming() {
         <video
           className="h-full w-full object-cover opacity-80"
           src={EarthVideo}
-          poster={EarthImage}
           autoPlay
           muted
           loop
