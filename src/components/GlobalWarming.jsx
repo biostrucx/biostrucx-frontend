@@ -94,7 +94,7 @@ export default function GlobalWarming() {
               Explore our Launchpad for Climate Innovation <ArrowRight size={18} />
             </a>
             <a
-              href="/dashboard/cliente_1"
+              href="/dashboard/jeimie"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-5 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/10"
             >
               Meet Our First Customer
