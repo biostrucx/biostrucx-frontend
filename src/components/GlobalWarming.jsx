@@ -5,7 +5,7 @@ import { ArrowRight, Globe2, Waves, Activity } from "lucide-react";
 
 // ⚠️ Archivos en: src/assets/
 import EarthVideo from "../assets/earth-loop.mp4";
-import EarthImage from "../assets/global-warming.png";
+
 
 export default function GlobalWarming() {
   const cards = [
