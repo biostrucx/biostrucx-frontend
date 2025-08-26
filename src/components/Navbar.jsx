@@ -61,7 +61,7 @@ const Navbar = () => {
 
         {/* Derecha: menú desktop */}
         <div className="hidden md:flex items-center gap-6 text-sm">
-          <button onClick={() => go('/')} className="text-white/90 hover:opacity-80">Home</button>
+          <button onClick={() => go('/')} className="text-white/90 hover:opacity-80">HOME</button>
 
           <button
             onClick={() => go('/launchpad')}
