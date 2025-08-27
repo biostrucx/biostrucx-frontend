@@ -2,23 +2,27 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const LinkUnderline = ({ active, children }) => (
-  <span className="relative inline-block tracking-[0.08em] group">
-    <span className="opacity-90">{children}</span>
-    <span
-      className={`absolute left-0 -bottom-1 h-[2px] bg-white/90 transition-all duration-300 ${
-        active ? 'w-full' : 'w-0 group-hover:w-full'
-      }`}
-    />
+const ItemPill = ({ active, children }) => (
+  <span
+    className={
+      // Alto/espaciado consistente + borde sutil
+      `inline-flex h-9 items-center px-4 rounded-full text-[12px] tracking-[0.14em] uppercase
+       border transition
+       ${active
+         ? 'bg-white/12 border-white/25 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
+         : 'bg-white/[0.04] border-white/10 text-white/90 hover:bg-white/[0.08] hover:border-white/20'}`
+    }
+  >
+    {children}
   </span>
 );
 
-const PillButton = ({ active, children }) => (
+const ItemGhost = ({ active, children }) => (
   <span
     className={
-      `px-3 py-1.5 rounded-full border backdrop-blur-sm transition shadow-[0_0_0_1px_rgba(255,255,255,0.03)] ` +
-      `border-white/10 text-white/90 ` +
-      (active ? 'bg-white/15 border-white/20' : 'bg-white/5 hover:bg-white/10 hover:border-white/20')
+      `inline-flex h-9 items-center px-2 text-[12px] tracking-[0.18em] uppercase
+       transition
+       ${active ? 'text-white' : 'text-white/80 hover:text-white'}`
     }
   >
     {children}
@@ -28,11 +32,9 @@ const PillButton = ({ active, children }) => (
 const LiveBadge = ({ boosted }) => (
   <span
     className={
-      `inline-flex items-center gap-1 pl-2 pr-2.5 py-0.5 rounded-full text-[11px] font-black tracking-wider ` +
-      `border text-red-400 ` +
-      (boosted
-        ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.55)]'
-        : 'border-red-500/70 shadow-[0_0_0_1px_rgba(239,68,68,0.25)]')
+      `inline-flex items-center gap-1.5 h-6 px-2 rounded-full text-[11px] font-semibold tracking-wider
+       border ${boosted ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.45)]' : 'border-red-500/70'}
+       text-red-400`
     }
   >
     <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -50,20 +52,19 @@ const Navbar = () => {
     navigate(path);
   };
 
-  // Rutas activas
   const isHome = pathname === '/';
   const isLaunchpad = pathname.startsWith('/launchpad');
   const isGW = pathname.startsWith('/global-warming');
   const isLive = pathname.startsWith('/dashboard');
 
   return (
-    <nav className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl supports-[backdrop-filter]:bg-black/55 border-b border-white/10">
+    <nav className="sticky top-0 z-50 bg-black/75 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
         {/* Brand + X */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => go('/')}
-            className="text-[22px] md:text-2xl font-extrabold tracking-widest text-white hover:opacity-90 transition"
+            className="text-xl md:text-[20px] font-extrabold tracking-[0.28em] text-white hover:opacity-90 transition"
             aria-label="BioStrucX Home"
           >
             BIOSTRUCX
@@ -73,18 +74,18 @@ const Navbar = () => {
             href="https://x.com/BiostrucX"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 text-white/90
-                       bg-white/0 hover:bg-white/10 transition"
+            className="hidden sm:inline-flex h-8 items-center gap-2 px-3 rounded-full border border-white/10 text-white/85
+                       bg-white/[0.02] hover:bg-white/[0.08] transition"
             aria-label="Abrir Twitter de BioStrucX"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
             </svg>
-            <span className="text-xs font-medium tracking-wide">Twitter</span>
+            <span className="text-[12px] tracking-wide">Twitter</span>
           </a>
         </div>
 
-        {/* More (mobile) */}
+        {/* Mobile: More */}
         <button
           className="md:hidden inline-flex items-center justify-center gap-2 p-2 text-white"
           onClick={() => setOpen((v) => !v)}
@@ -96,70 +97,60 @@ const Navbar = () => {
             <span className={`block h-0.5 w-6 bg-current my-1 transition ${open ? 'opacity-0' : ''}`} />
             <span className={`block h-0.5 w-6 bg-current transition ${open ? '-rotate-45 -translate-y-1' : ''}`} />
           </div>
-          <span className="relative text-sm font-semibold">
-            More
-            <span className="absolute left-0 -bottom-0.5 w-full h-[2px] bg-white" />
-          </span>
         </button>
 
         {/* Desktop menu */}
-        <div className="hidden md:flex items-center gap-7 text-[13px]">
-          <button onClick={() => go('/')} className="group text-white/90 hover:text-white transition">
-            <LinkUnderline active={isHome}>HOME</LinkUnderline>
+        <div className="hidden md:flex items-center gap-6">
+          <button onClick={() => go('/')}><ItemGhost active={isHome}>Home</ItemGhost></button>
+
+          <button onClick={() => go('/launchpad')}>
+            <ItemPill active={isLaunchpad}>Launchpad</ItemPill>
           </button>
 
-          <button onClick={() => go('/launchpad')} className="group text-white/90 hover:text-white transition">
-            <PillButton active={isLaunchpad}>
-              <span className="tracking-[0.12em]">LAUNCHPAD</span>
-            </PillButton>
-          </button>
-
-          <button onClick={() => go('/global-warming')} className="group text-white/90 hover:text-white transition">
-            <PillButton active={isGW}>
-              <span className="whitespace-nowrap tracking-[0.12em]">GLOBAL&nbsp;WARMING</span>
-            </PillButton>
+          <button onClick={() => go('/global-warming')}>
+            <ItemPill active={isGW}>Global&nbsp;Warming</ItemPill>
           </button>
 
           <div
             onClick={() => go('/dashboard/jeimie')}
             className={
-              `flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full border transition ` +
-              (isLive ? 'bg-white/10 border-white/20' : 'bg-white/0 hover:bg-white/10 border-white/10')
+              `inline-flex items-center gap-3 h-9 px-4 rounded-full cursor-pointer border transition 
+               ${isLive ? 'bg-white/12 border-white/25' : 'bg-white/[0.04] border-white/10 hover:bg-white/[0.08] hover:border-white/20'}`
             }
             title="Open BioStrucX LIVE"
           >
-            <span className="font-semibold text-white tracking-[0.14em]">BIOSTRUCX</span>
+            <span className="text-[12px] tracking-[0.14em] uppercase text-white">BioStrucX</span>
             <LiveBadge boosted={isLive} />
           </div>
         </div>
       </div>
 
       {/* Mobile dropdown */}
-      <div className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? 'max-h-72' : 'max-h-0'}`}>
-        <div className="px-4 pb-4 pt-2 flex flex-col gap-2 text-sm border-t border-white/10 bg-black/70 backdrop-blur-xl">
+      <div className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? 'max-h-80' : 'max-h-0'}`}>
+        <div className="px-4 pb-4 pt-2 flex flex-col gap-2 text-sm border-t border-white/10 bg-black/80 backdrop-blur-xl">
           <button
             onClick={() => go('/')}
-            className={`text-left px-3 py-3 rounded-lg hover:bg-white/10 ${isHome ? 'bg-white/10' : ''}`}
+            className={`text-left rounded-lg ${isHome ? 'bg-white/10' : 'hover:bg-white/06'} px-3 py-3`}
           >
-            <span className="tracking-wider">HOME</span>
+            Home
           </button>
           <button
             onClick={() => go('/launchpad')}
-            className={`text-left px-3 py-3 rounded-lg hover:bg-white/10 ${isLaunchpad ? 'bg-white/10' : ''}`}
+            className={`text-left rounded-lg ${isLaunchpad ? 'bg-white/10' : 'hover:bg-white/06'} px-3 py-3`}
           >
-            <span className="tracking-wider">LAUNCHPAD</span>
+            Launchpad
           </button>
           <button
             onClick={() => go('/global-warming')}
-            className={`text-left px-3 py-3 rounded-lg hover:bg-white/10 ${isGW ? 'bg-white/10' : ''}`}
+            className={`text-left rounded-lg ${isGW ? 'bg-white/10' : 'hover:bg-white/06'} px-3 py-3`}
           >
-            <span className="tracking-wider">GLOBAL&nbsp;WARMING</span>
+            Global Warming
           </button>
           <button
             onClick={() => go('/dashboard/jeimie')}
-            className={`flex items-center justify-between px-3 py-3 rounded-lg hover:bg-white/10 ${isLive ? 'bg-white/10' : ''}`}
+            className={`flex items-center justify-between rounded-lg ${isLive ? 'bg-white/10' : 'hover:bg-white/06'} px-3 py-3`}
           >
-            <span className="tracking-wider">BIOSTRUCX</span>
+            <span>BioStrucX</span>
             <LiveBadge boosted={isLive} />
           </button>
         </div>
@@ -169,6 +160,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
 
