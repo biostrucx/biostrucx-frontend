@@ -32,7 +32,7 @@ const Navbar = () => {
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
         
         {/* Left: X + Logo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center">
           <a
             href="https://x.com/BiostrucX"
             target="_blank"
@@ -52,7 +52,7 @@ const Navbar = () => {
 
           <button
             onClick={() => go('/')}
-            className="text-lg md:text-xl font-extrabold tracking-[0.25em] text-white hover:opacity-80 transition"
+            className="ml-20 text-lg md:text-xl font-extrabold tracking-[0.25em] text-white hover:opacity-80 transition"
           >
             BIOSTRUCX
           </button>
@@ -130,5 +130,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
 
