@@ -19,7 +19,7 @@ const Navbar = () => {
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/30 text-white/90 hover:bg-white hover:text-black transition"
           aria-label="Abrir Twitter de BioStrucX"
         >
-          {/* Icono X/Twitter (SVG ligero) */}
+          {/* Icono X/Twitter */}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
           </svg>
@@ -27,12 +27,29 @@ const Navbar = () => {
         </a>
       </div>
 
-      {/* Derecha: Home + BioStrucX LIVE (estilo NASA) */}
+      {/* Derecha: Home + Launchpad + Global Warming + BioStrucX LIVE */}
       <div className="flex items-center gap-6 text-sm">
         <button onClick={() => navigate('/')} className="text-white/90 hover:opacity-80">
           Home
         </button>
 
+        {/* Botón Launchpad */}
+        <button
+          onClick={() => navigate('/launchpad')}
+          className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/15 border border-white/10"
+        >
+          LAUNCHPAD
+        </button>
+
+        {/* Botón Global Warming */}
+        <button
+          onClick={() => navigate('/global-warming')}
+          className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/15 border border-white/10"
+        >
+          GLOBAL&nbsp;WARMING
+        </button>
+
+        {/* BioStrucX LIVE estilo NASA */}
         <div
           onClick={() => navigate('/dashboard/jeimie')}
           className="flex items-center gap-2 cursor-pointer"
@@ -48,6 +65,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 
 
 
