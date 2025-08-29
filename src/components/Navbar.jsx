@@ -1,184 +1,37 @@
 // src/components/Navbar.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const LiveBadge = ({ active }) => (
-  <span
-    className={`ml-2 text-[12px] font-bold tracking-widest uppercase ${
-      active ? 'text-red-500 animate-pulse' : 'text-red-500'
-    }`}
-  >
-    ● Live
-  </span>
-);
-
-export default function Navbar() {
+const Navbar = () => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const go = (path) => {
-    setOpen(false);
-    navigate(path);
-  };
-
-  const isHome = pathname === '/';
-  const isLaunchpad = pathname.startsWith('/launchpad');
-  const isGW = pathname.startsWith('/global-warming');
-  const isLive = pathname.startsWith('/dashboard');
-
-  // Bloquea scroll cuando el drawer está abierto (iOS friendly)
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.style.overflow;
-    if (open) root.style.overflow = 'hidden';
-    return () => { root.style.overflow = prev; };
-  }, [open]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
-      {/* Top bar */}
-      <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-        {/* Left: X + Logo */}
-        <div className="flex items-center">
-          <a
-            href="https://x.com/BiostrucX"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/80 hover:text-white transition"
-            aria-label="BioStrucX on X"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="h-5 w-5">
-              <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
-            </svg>
-          </a>
+    <nav className="flex items-center justify-between px-6 py-4 bg-black/80">
+      <div className="text-2xl font-bold">BioStrucX</div>
 
-          <button
-            onClick={() => go('/')}
-            className="ml-20 text-lg md:text-xl font-extrabold tracking-[0.25em] text-white hover:opacity-80 transition"
-            aria-label="Home"
-          >
-            BIOSTRUCX
-          </button>
-        </div>
-
-        {/* Mobile: hamburger */}
+      <div className="flex items-center gap-6 text-sm">
         <button
-          className="md:hidden inline-flex items-center justify-center p-2 rounded text-white focus:outline-none focus:ring-2 focus:ring-white/40"
-          onClick={() => setOpen(v => !v)}
-          aria-label="Open menu"
-          aria-expanded={open}
-          aria-controls="mobile-drawer"
+          onClick={() => navigate('/')}
+          className="hover:opacity-80"
         >
-          <div className="relative w-6 h-5">
-            <span className={`absolute left-0 top-0 h-0.5 w-6 bg-current transition-transform ${open ? 'translate-y-2.5 rotate-45' : ''}`} />
-            <span className={`absolute left-0 top-2.5 h-0.5 w-6 bg-current transition-opacity ${open ? 'opacity-0' : 'opacity-100'}`} />
-            <span className={`absolute left-0 bottom-0 h-0.5 w-6 bg-current transition-transform ${open ? '-translate-y-2.5 -rotate-45' : ''}`} />
-          </div>
+          Home
         </button>
 
-        {/* Desktop menu */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wider">
-          <button onClick={() => go('/')} className={`uppercase ${isHome ? 'text-white' : 'text-white/80 hover:text-white'}`}>Home</button>
-          <button onClick={() => go('/launchpad')} className={`uppercase ${isLaunchpad ? 'text-white' : 'text-white/80 hover:text-white'}`}>Launchpad</button>
-          <button onClick={() => go('/global-warming')} className={`uppercase ${isGW ? 'text-white' : 'text-white/80 hover:text-white'}`}>Global Warming</button>
-          <button
-            onClick={() => go('/dashboard/jeimie')}
-            className={`uppercase flex items-center ${isLive ? 'text-white' : 'text-white/80 hover:text-white'}`}
-          >
-            BioStrucX
-            <LiveBadge active={isLive} />
-          </button>
+        <div
+          onClick={() => navigate('/dashboard/jeimie')}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <span className="font-semibold text-white">BioStrucX</span>
+          <span className="px-2 py-0.5 text-xs font-bold border border-red-600 text-red-600 rounded-sm hover:bg-red-600 hover:text-white transition">
+            LIVE
+          </span>
         </div>
       </div>
-
-      {/* Mobile drawer: renderiza SOLO cuando está abierto (clave para iOS) */}
-      {open && (
-        <>
-          {/* Overlay */}
-          <div
-            className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm opacity-100"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* Side panel */}
-          <aside
-            id="mobile-drawer"
-            className="md:hidden fixed right-0 top-0 z-50 h-full w-72 max-w-[85vw] bg-black/95 border-l border-white/10
-                       transition-transform duration-300 translate-x-0"
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Header dentro del drawer */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
-              <span className="text-xs uppercase tracking-widest text-white/60">Menu</span>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Close menu"
-                className="p-2 text-white/80 hover:text-white"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.3 5.7a1 1 0 0 0-1.4-1.4L12 9.17 7.1 4.3a1 1 0 1 0-1.4 1.4L10.83 12l-5.13 4.9a1 1 0 1 0 1.4 1.4L12 14.83l4.9 5.13a1 1 0 0 0 1.4-1.4L13.17 12l5.13-4.9Z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Items */}
-            <nav className="px-2 py-2">
-              <button
-                onClick={() => go('/')}
-                className={`w-full h-12 px-3 text-left uppercase text-[14px] font-semibold tracking-wider rounded-md
-                            ${isHome ? 'text-white bg-white/10' : 'text-white/85 hover:text-white hover:bg-white/5'}`}
-              >
-                Home
-              </button>
-              <button
-                onClick={() => go('/launchpad')}
-                className={`w-full h-12 px-3 text-left uppercase text-[14px] font-semibold tracking-wider rounded-md
-                            ${isLaunchpad ? 'text-white bg-white/10' : 'text-white/85 hover:text-white hover:bg-white/5'}`}
-              >
-                Launchpad
-              </button>
-              <button
-                onClick={() => go('/global-warming')}
-                className={`w-full h-12 px-3 text-left uppercase text-[14px] font-semibold tracking-wider rounded-md
-                            ${isGW ? 'text-white bg-white/10' : 'text-white/85 hover:text-white hover:bg-white/5'}`}
-              >
-                Global Warming
-              </button>
-              <button
-                onClick={() => go('/dashboard/jeimie')}
-                className={`w-full h-12 px-3 flex items-center justify-between uppercase text-[14px] font-semibold tracking-wider rounded-md
-                            ${isLive ? 'text-white bg-white/10' : 'text-white/85 hover:text-white hover:bg-white/5'}`}
-              >
-                <span>BioStrucX</span>
-                <LiveBadge active={isLive} />
-              </button>
-
-              {/* Social */}
-              <div className="h-px bg-white/10 mx-1 my-3" />
-              <div className="px-1 flex items-center gap-3">
-                <a
-                  href="https://x.com/BiostrucX"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/5 text-white/80 hover:text-white hover:bg-white/10 transition"
-                  aria-label="Open X"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="h-5 w-5">
-                    <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
-                  </svg>
-                </a>
-              </div>
-            </nav>
-          </aside>
-        </>
-      )}
     </nav>
   );
-}
+};
 
+export default Navbar;
 
 
 
