@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const LiveBadge = ({ active }) => (
@@ -26,6 +26,64 @@ const Navbar = () => {
   const isLaunchpad = pathname.startsWith('/launchpad');
   const isGW = pathname.startsWith('/global-warming');
   const isLive = pathname.startsWith('/dashboard');
+
+  // ---- Autoplay fix global para videos de fondo (iOS/Safari/móvil) ----
+  useEffect(() => {
+    const videos = Array.from(
+      document.querySelectorAll('video[autoplay], video[data-bg]')
+    );
+
+    const controllers = [];
+
+    videos.forEach((el) => {
+      // flags requeridos por iOS
+      el.muted = true;
+      el.playsInline = true;
+      el.setAttribute('webkit-playsinline', 'true');
+      el.setAttribute('muted', 'true'); // por si el DOM lo necesita
+
+      const tryPlay = async () => {
+        try {
+          await el.play();
+        } catch {
+          // silencioso; reintentamos con eventos
+        }
+      };
+
+      const onLoaded = () => tryPlay();
+      const onVis = () => {
+        if (document.visibilityState === 'visible') tryPlay();
+      };
+      const onResume = () => tryPlay();
+
+      el.addEventListener('loadedmetadata', onLoaded);
+      el.addEventListener('stalled', onResume);
+      el.addEventListener('pause', onResume);
+      el.addEventListener('error', onResume);
+      document.addEventListener('visibilitychange', onVis);
+
+      const io = new IntersectionObserver(
+        (ents) => ents.forEach((e) => e.isIntersecting && tryPlay()),
+        { threshold: 0.25 }
+      );
+      io.observe(el);
+
+      // primer intento
+      tryPlay();
+
+      controllers.push(() => {
+        el.removeEventListener('loadedmetadata', onLoaded);
+        el.removeEventListener('stalled', onResume);
+        el.removeEventListener('pause', onResume);
+        el.removeEventListener('error', onResume);
+        document.removeEventListener('visibilitychange', onVis);
+        io.disconnect();
+      });
+    });
+
+    return () => controllers.forEach((off) => off());
+  }, []); // se ejecuta una sola vez al montar el Navbar
+  // --------------------------------------------------------------------
 
   return (
     <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
