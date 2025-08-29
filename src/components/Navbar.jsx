@@ -27,63 +27,109 @@ const Navbar = () => {
   const isGW = pathname.startsWith('/global-warming');
   const isLive = pathname.startsWith('/dashboard');
 
-  // ---- Autoplay fix global para videos de fondo (iOS/Safari/móvil) ----
+  // --- AUTOPLAY SUPER-REFORZADO PARA VIDEOS DE FONDO ---
   useEffect(() => {
-    const videos = Array.from(
-      document.querySelectorAll('video[autoplay], video[data-bg]')
-    );
+    let cancelled = false;
 
-    const controllers = [];
-
-    videos.forEach((el) => {
-      // flags requeridos por iOS
+    const setupAndPlay = async (el) => {
+      if (!el) return;
+      // Asegura flags ANTES de cargar
       el.muted = true;
+      el.setAttribute('muted', 'true');
       el.playsInline = true;
+      el.setAttribute('playsinline', 'true');
       el.setAttribute('webkit-playsinline', 'true');
-      el.setAttribute('muted', 'true'); // por si el DOM lo necesita
+      el.setAttribute('autoplay', 'true');
+      el.setAttribute('loop', 'true');
+      el.setAttribute('preload', 'auto');
+      el.removeAttribute('controls');
 
-      const tryPlay = async () => {
-        try {
-          await el.play();
-        } catch {
-          // silencioso; reintentamos con eventos
-        }
-      };
+      try {
+        // Reinicia pipeline de carga para que Safari tome las flags
+        el.pause();
+        // Si ya está en reproducción, no recargues para evitar parpadeo
+        if (el.readyState < 2) el.load();
+        await el.play();
+      } catch {
+        // silencioso, reintento por eventos o gestos
+      }
+    };
 
-      const onLoaded = () => tryPlay();
-      const onVis = () => {
-        if (document.visibilityState === 'visible') tryPlay();
-      };
-      const onResume = () => tryPlay();
+    const fixAll = () => {
+      const videos = Array.from(document.querySelectorAll('video'));
+      videos.forEach((v) => setupAndPlay(v));
+    };
 
-      el.addEventListener('loadedmetadata', onLoaded);
-      el.addEventListener('stalled', onResume);
-      el.addEventListener('pause', onResume);
-      el.addEventListener('error', onResume);
-      document.addEventListener('visibilitychange', onVis);
-
+    // Observa intersección para arrancar solo cuando esté a la vista
+    const observers = [];
+    const addIO = (el) => {
       const io = new IntersectionObserver(
-        (ents) => ents.forEach((e) => e.isIntersecting && tryPlay()),
-        { threshold: 0.25 }
+        (ents) => ents.forEach((e) => e.isIntersecting && setupAndPlay(el)),
+        { threshold: 0.15 }
       );
       io.observe(el);
+      observers.push(io);
+    };
 
-      // primer intento
-      tryPlay();
+    // Handlers globales para reintentos
+    const onVis = () => document.visibilityState === 'visible' && fixAll();
+    const onGesture = () => fixAll(); // primer tap/scroll/etc
 
-      controllers.push(() => {
-        el.removeEventListener('loadedmetadata', onLoaded);
-        el.removeEventListener('stalled', onResume);
-        el.removeEventListener('pause', onResume);
-        el.removeEventListener('error', onResume);
-        document.removeEventListener('visibilitychange', onVis);
-        io.disconnect();
-      });
-    });
+    // Adjunta listeners a cada video relevante
+    const attachPerVideo = (el) => {
+      const again = () => setupAndPlay(el);
+      el.addEventListener('loadedmetadata', again);
+      el.addEventListener('canplay', again);
+      el.addEventListener('stalled', again);
+      el.addEventListener('pause', again);
+      el.addEventListener('error', again);
+      addIO(el);
+      return () => {
+        el.removeEventListener('loadedmetadata', again);
+        el.removeEventListener('canplay', again);
+        el.removeEventListener('stalled', again);
+        el.removeEventListener('pause', again);
+        el.removeEventListener('error', again);
+      };
+    };
 
-    return () => controllers.forEach((off) => off());
-  }, []); // se ejecuta una sola vez al montar el Navbar
-  // --------------------------------------------------------------------
+    const cleanups = [];
+    const videos = Array.from(document.querySelectorAll('video'));
+    videos.forEach((v) => cleanups.push(attachPerVideo(v)));
+
+    // Listeners globales (gesto de usuario & visibilidad)
+    document.addEventListener('visibilitychange', onVis, { passive: true });
+    const gestureEvents = ['touchstart', 'click', 'scroll'];
+    gestureEvents.forEach((e) =>
+      document.addEventListener(e, onGesture, { passive: true, once: true })
+    );
+
+    // Reintento temporal (durante 10s cada 1.5s)
+    let ticks = 0;
+    const retryTimer = setInterval(() => {
+      if (cancelled) return;
+      if (ticks++ > 6) {
+        clearInterval(retryTimer);
+        return;
+      }
+      fixAll();
+    }, 1500);
+
+    // Primer intento inmediato
+    fixAll();
+
+    return () => {
+      cancelled = true;
+      observers.forEach((io) => io.disconnect());
+      cleanups.forEach((fn) => fn && fn());
+      document.removeEventListener('visibilitychange', onVis);
+      gestureEvents.forEach((e) =>
+        document.removeEventListener(e, onGesture, { passive: true })
+      );
+      clearInterval(retryTimer);
+    };
+  }, [pathname]); // se ejecuta al montar y en cada cambio de ruta
+  // ------------------------------------------------------
 
   return (
     <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
@@ -142,7 +188,6 @@ const Navbar = () => {
       </div>
 
       {/* Mobile drawer (overlay + panel) */}
-      {/* Overlay click-to-close */}
       <div
         className={`md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity ${
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -151,14 +196,12 @@ const Navbar = () => {
         aria-hidden={!open}
       />
 
-      {/* Side panel */}
       <aside
         className={`md:hidden fixed right-0 top-0 z-50 h-full w-72 max-w-[85vw] bg-black/95 border-l border-white/10
                     transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
         aria-modal="true"
       >
-        {/* Header dentro del drawer */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <span className="text-xs uppercase tracking-widest text-white/60">Menu</span>
           <button
@@ -172,7 +215,6 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Items */}
         <nav className="px-2 py-2">
           <button
             onClick={() => go('/')}
@@ -204,7 +246,6 @@ const Navbar = () => {
             <LiveBadge active={isLive} />
           </button>
 
-          {/* Social */}
           <div className="h-px bg-white/10 mx-1 my-3" />
           <div className="px-1 flex items-center gap-3">
             <a
@@ -226,6 +267,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 
 
 
