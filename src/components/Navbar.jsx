@@ -1,112 +1,103 @@
 // src/components/Navbar.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const LiveBadge = ({ active }) => (
+  <span
+    className={
+      `ml-2 text-[12px] font-bold tracking-widest uppercase
+       ${active ? 'text-red-500 animate-pulse' : 'text-red-500'}`
+    }
+  >
+    ● Live
+  </span>
+);
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false); // menú móvil
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
 
   const go = (path) => {
-    setOpen(false);        // cierra menú al navegar en móvil
+    setOpen(false);
     navigate(path);
   };
 
+  const isHome = pathname === '/';
+  const isLaunchpad = pathname.startsWith('/launchpad');
+  const isGW = pathname.startsWith('/global-warming');
+  const isLive = pathname.startsWith('/dashboard');
+
   return (
-    <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur supports-[backdrop-filter]:bg-black/60">
-      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-        {/* Izquierda: Brand + Twitter */}
-        <div className="flex items-center gap-3">
+    <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
+      <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
+        
+        {/* Left: Logo */}
+        <div className="flex items-center gap-6">
           <button
             onClick={() => go('/')}
-            className="text-2xl font-bold text-white"
-            aria-label="BioStrucX Home"
+            className="text-lg md:text-xl font-extrabold tracking-[0.25em] text-white hover:opacity-80 transition"
           >
-            BioStrucX
+            BIOSTRUCX
           </button>
-
-          <a
-            href="https://x.com/BiostrucX"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/30 text-white/90 hover:bg-white hover:text-black transition"
-            aria-label="Abrir Twitter de BioStrucX"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M18.244 2H21l-6.52 7.45L22.5 22h-6.82l-4.77-6.3L4.6 22H2l7.17-8.2L1.5 2h6.86l4.33 5.7L18.244 2Zm-1.19 18h2.03L8.1 4H6.06l10 16Z"/>
-            </svg>
-            <span className="text-sm font-medium">Twitter</span>
-          </a>
         </div>
 
-        {/* Botón "More" (hamburguesa) solo móvil */}
+        {/* Mobile menu button */}
         <button
-          className="md:hidden inline-flex items-center justify-center gap-2 p-2 text-white"
+          className="md:hidden text-white"
           onClick={() => setOpen((v) => !v)}
-          aria-label="Abrir menú"
-          aria-expanded={open}
         >
-          {/* Icono hamburguesa / X */}
-          <div className="flex flex-col">
-            <span className={`block h-0.5 w-5 bg-current transition ${open ? 'rotate-45 translate-y-1' : ''}`}></span>
-            <span className={`block h-0.5 w-5 bg-current my-1 transition ${open ? 'opacity-0' : ''}`}></span>
-            <span className={`block h-0.5 w-5 bg-current transition ${open ? '-rotate-45 -translate-y-1' : ''}`}></span>
-          </div>
-
-          {/* Texto "More" con subrayado fijo */}
-          <span className="relative text-sm font-semibold">
-            More
-            <span className="absolute left-0 -bottom-0.5 w-full h-[2px] bg-white"></span>
-          </span>
+          ☰
         </button>
 
-        {/* Derecha: menú desktop */}
-        <div className="hidden md:flex items-center gap-6 text-sm">
-          <button onClick={() => go('/')} className="text-white/90 hover:opacity-80">HOME</button>
-
+        {/* Right: Menu (desktop) */}
+        <div className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wider">
+          <button
+            onClick={() => go('/')}
+            className={`uppercase ${isHome ? 'text-white' : 'text-white/70 hover:text-white'}`}
+          >
+            Home
+          </button>
           <button
             onClick={() => go('/launchpad')}
-            className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/15 border border-white/10"
+            className={`uppercase ${isLaunchpad ? 'text-white' : 'text-white/70 hover:text-white'}`}
           >
-            LAUNCHPAD
+            Launchpad
           </button>
-
           <button
             onClick={() => go('/global-warming')}
-            className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/15 border border-white/10"
+            className={`uppercase ${isGW ? 'text-white' : 'text-white/70 hover:text-white'}`}
           >
-            GLOBAL&nbsp;WARMING
+            Global Warming
           </button>
-
-          <div
+          <button
             onClick={() => go('/dashboard/jeimie')}
-            className="flex items-center gap-2 cursor-pointer"
+            className="uppercase text-white hover:opacity-80 flex items-center"
           >
-            <span className="font-semibold text-white">BioStrucX</span>
-            <span className="px-2 py-0.5 text-xs font-bold border border-red-600 text-red-600 rounded-sm hover:bg-red-600 hover:text-white transition">
-              LIVE
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Menú móvil desplegable */}
-      <div
-        className={`md:hidden overflow-hidden transition-[max-height] duration-300 ${open ? 'max-h-64' : 'max-h-0'}`}
-      >
-        <div className="px-4 pb-4 pt-2 flex flex-col gap-2 text-sm border-t border-white/10">
-          <button onClick={() => go('/')} className="text-left px-3 py-2 rounded hover:bg-white/10">HOME</button>
-          <button onClick={() => go('/launchpad')} className="text-left px-3 py-2 rounded hover:bg-white/10">LAUNCHPAD</button>
-          <button onClick={() => go('/global-warming')} className="text-left px-3 py-2 rounded hover:bg-white/10">GLOBAL WARMING</button>
-          <button onClick={() => go('/dashboard/jeimie')} className="text-left px-3 py-2 rounded hover:bg-white/10">
-            BioStrucX <span className="ml-2 px-2 py-0.5 text-[10px] font-bold border border-red-600 text-red-400 rounded-sm">LIVE</span>
+            BioStrucX
+            <LiveBadge active={isLive} />
           </button>
         </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {open && (
+        <div className="md:hidden bg-black/90 backdrop-blur-xl border-t border-white/10 flex flex-col px-4 py-3 space-y-2 text-sm font-semibold">
+          <button onClick={() => go('/')} className={`${isHome ? 'text-white' : 'text-white/70 hover:text-white'}`}>Home</button>
+          <button onClick={() => go('/launchpad')} className={`${isLaunchpad ? 'text-white' : 'text-white/70 hover:text-white'}`}>Launchpad</button>
+          <button onClick={() => go('/global-warming')} className={`${isGW ? 'text-white' : 'text-white/70 hover:text-white'}`}>Global Warming</button>
+          <button onClick={() => go('/dashboard/jeimie')} className="flex items-center text-white">
+            BioStrucX
+            <LiveBadge active={isLive} />
+          </button>
+        </div>
+      )}
     </nav>
   );
 };
 
 export default Navbar;
+
 
 
 
