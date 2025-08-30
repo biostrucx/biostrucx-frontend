@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import Dashboard from './components/Dashboard';
 import Launchpad from './components/Launchpad';
-import AboutUs from './components/AboutUs';
+import AboutUs from './components/AboutUs';   // ✅ rename (was Launchpad)
 import GlobalWarming from './components/GlobalWarming';
 
 export default function App() {
@@ -16,11 +16,11 @@ export default function App() {
         <Route path="/" element={<HeroSection />} />
         <Route path="/dashboard/:clientid" element={<Dashboard />} />
         <Route path="/launchpad" element={<Launchpad />} />
-         <Route path="/AboutUs" element={<AboutUs />} />
+        <Route path="/aboutus" element={<AboutUs />} />   {/* ✅ add route */}
         <Route path="/global-warming" element={<GlobalWarming />} />
-        {/* opcional: redirige/cae al home */}
         <Route path="*" element={<HeroSection />} />
       </Routes>
     </div>
   );
 }
+
