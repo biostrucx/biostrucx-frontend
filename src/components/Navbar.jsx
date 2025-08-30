@@ -27,12 +27,11 @@ const Navbar = () => {
   const isLaunchpad = pathname.startsWith('/launchpad');
   const isGW = pathname.startsWith('/global-warming');
   const isLive = pathname.startsWith('/dashboard');
-  const isVision = pathname.startsWith('/aboutus'); // <-- added
+  const isVision = pathname.startsWith('/aboutus'); // mantiene Our Vision
 
   return (
     <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-        
         {/* Left: Logo */}
         <div className="flex items-center gap-6">
           <button
@@ -45,8 +44,9 @@ const Navbar = () => {
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden text-white"
+          className="md:hidden text-white text-2xl leading-none"
           onClick={() => setOpen((v) => !v)}
+          aria-label="Open menu"
         >
           ☰
         </button>
@@ -59,7 +59,6 @@ const Navbar = () => {
           >
             Home
           </button>
-          {/* <-- added button next to Home */}
           <button
             onClick={() => go('/aboutus')}
             className={`uppercase ${isVision ? 'text-white' : 'text-white/70 hover:text-white'}`}
@@ -88,22 +87,74 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile dropdown — modern overlay + sheet */}
       {open && (
-        <div className="md:hidden bg-black/90 backdrop-blur-xl border-t border-white/10 flex flex-col px-4 py-3 space-y-2 text-sm font-semibold">
-          <button onClick={() => go('/')} className={`${isHome ? 'text-white' : 'text-white/70 hover:text-white'}`}>Home</button>
-          {/* <-- added in mobile menu */}
-          <button onClick={() => go('/aboutus')} className={`${isVision ? 'text-white' : 'text-white/70 hover:text-white'}`}>Our Vision</button>
-          <button onClick={() => go('/launchpad')} className={`${isLaunchpad ? 'text-white' : 'text-white/70 hover:text-white'}`}>Launchpad</button>
-          <button onClick={() => go('/global-warming')} className={`${isGW ? 'text-white' : 'text-white/70 hover:text-white'}`}>Global Warming</button>
-          <button onClick={() => go('/dashboard/jeimie')} className="flex items-center text-white">
-            BioStrucX
-            <LiveBadge active={isLive} />
-          </button>
+        <div
+          className="md:hidden fixed inset-0 z-[60]"
+          aria-modal="true"
+          role="dialog"
+        >
+          {/* Backdrop */}
+          <button
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+          />
+          {/* Sheet */}
+          <div className="
+              absolute left-0 right-0 top-0
+              pt-[env(safe-area-inset-top)]
+              bg-[#0b0b0b] border-b border-white/10
+              rounded-b-2xl shadow-2xl
+              translate-y-0
+              transition-transform
+            ">
+            <div className="px-4 py-3 flex items-center justify-between">
+              <span className="text-white/70 text-sm tracking-widest uppercase">Menu</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-white/80 text-xl px-3 py-1 rounded-lg hover:bg-white/10"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col px-3 pb-4">
+              <MobileItem active={isHome} onClick={() => go('/')}>Home</MobileItem>
+              <MobileItem active={isVision} onClick={() => go('/aboutus')}>Our Vision</MobileItem>
+              <MobileItem active={isLaunchpad} onClick={() => go('/launchpad')}>Launchpad</MobileItem>
+              <MobileItem active={isGW} onClick={() => go('/global-warming')}>Global Warming</MobileItem>
+
+              <div className="mt-2 border-t border-white/10" />
+              <button
+                onClick={() => go('/dashboard/jeimie')}
+                className="w-full flex items-center justify-between px-4 py-4 text-base rounded-xl
+                           text-white bg-white/5 hover:bg-white/10 active:bg-white/15 mt-2"
+              >
+                <span className="uppercase">BioStrucX</span>
+                <LiveBadge active={isLive} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </nav>
   );
 };
 
+const MobileItem = ({ active, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`
+      w-full text-left px-4 py-4 text-base rounded-xl
+      ${active ? 'text-white bg-white/10' : 'text-white/80 bg-transparent hover:text-white hover:bg-white/5'}
+      transition
+    `}
+  >
+    {children}
+  </button>
+);
+
 export default Navbar;
+
