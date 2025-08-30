@@ -38,6 +38,9 @@ export default function Dashboard() {
     return () => { clearInterval(idPoll); clearInterval(idTick); };
   }, [clientid]);
 
+  // 🎥 Video Ely (Cloudinary, asset directo)
+  const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
+
   return (
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">BioStrucX Live — {clientid}</h2>
@@ -45,57 +48,151 @@ export default function Dashboard() {
       {loading && <div>Cargando…</div>}
       {err && <div className="text-red-400">{err}</div>}
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <Card title="Último ts" value={latest ? new Date(latest.ts).toLocaleString() : '—'} />
-        <Card title="disp_mm" value={latest?.disp_mm ?? '—'} />
-        <Card title="voltage_dc" value={latest?.voltage_dc ?? '—'} />
-        <Card title="adc_raw" value={latest?.adc_raw ?? '—'} />
+      {/* ===================== SECCIÓN 1 (arriba) ===================== */}
+      {/* Layout: 2 columnas x 2 filas (como tu primera imagen) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
+        {/* Columna IZQUIERDA */}
+        <div className="flex flex-col gap-6">
+          {/* A1: Video Ely + mensaje bienvenida */}
+          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+            <div className="relative aspect-video w-full">
+              <video
+                className="absolute inset-0 h-full w-full object-cover"
+                src={ELY_VIDEO}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+              <div className="absolute inset-0 bg-black/30" />
+            </div>
+            <div className="p-4 text-sm">
+              CHAT CON LA IA DE BIOSTRUCX.AI LLAMADA <strong>ELY</strong>. Al entrar a tu
+              dashboard se reproduce este video. HELLO WELCOME, cliente <strong>{clientid}</strong>.
+              Si necesitas soporte, pregúntame aquí (chat pronto).
+            </div>
+          </div>
+
+          {/* A2: Mapa 3D (placeholder) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-3 font-semibold">Mapa 3D — ubicación del sensor</div>
+            <div className="h-[220px] rounded-xl bg-black/30" />
+            <p className="mt-3 text-xs text-white/70">
+              Mapa interactivo para ver dónde está instalado el sensor (Wi-Fi/MQTT/HTTP/SIM).
+              Más adelante se podrá hacer <em>click</em> para ver país/ciudad/estructura.
+            </p>
+          </div>
+        </div>
+
+        {/* Columna DERECHA */}
+        <div className="flex flex-col gap-6">
+          {/* B1: FEM (OpenSeesPy) — render general (placeholder) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-3 font-semibold">
+              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
+            </div>
+            <div className="h-[220px] rounded-xl bg-black/30" />
+            <p className="mt-3 text-xs text-white/70">
+              Aquí irá el render/imagen de la viga con cargas/condiciones.
+            </p>
+          </div>
+
+          {/* B2: FEM — Ubicación del sensor (placeholder) + tarjeta de sensor */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="text-sm mb-3 font-semibold">
+                  FEM — Ubicación del sensor (BSX–FARADAY1)
+                </div>
+                <div className="h-[180px] rounded-xl bg-black/30" />
+                <p className="mt-3 text-xs text-white/70">
+                  Visualización destacando el punto exacto donde está el sensor (marcador rojo).
+                </p>
+              </div>
+
+              {/* Tarjeta de información del/los sensores */}
+              <div className="w-48 shrink-0 rounded-xl border border-white/10 bg-black/40 p-3">
+                <div className="text-xs opacity-70">Sensor info</div>
+                <div className="mt-1 text-sm">
+                  <div><span className="opacity-70">Modelo:</span> BSX–FARADAY1</div>
+                  <div><span className="opacity-70">Cantidad:</span> 1</div>
+                  <div><span className="opacity-70">Cliente:</span> {clientid}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <LiveChart title="Voltage (DC)" unit="V" valueKey="voltage_dc" data={stream} now={now} windowSec={60} yMin={0} yMax={5} />
-        <LiveChart title="Displacement" unit="mm" valueKey="disp_mm" data={stream} now={now} windowSec={60} yMin={0} yMax={5} />
-      </div>
+      {/* ===================== SECCIÓN 2 (abajo) ===================== */}
+      {/* Layout: 2 columnas — izquierda con 3 gráficos apilados; derecha con Ely + tarjeta explicativa */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Columna IZQUIERDA (ocupa 2/3 en desktop) */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Gráfico 1 — Teórico (placeholder) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-2 font-semibold">GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo</div>
+            <div className="h-[180px] rounded-xl bg-black/30" />
+            <div className="mt-2 text-xs text-white/60">Eje vertical: desplazamiento (mm) · Eje horizontal: tiempo</div>
+          </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left opacity-70">
-            <tr>
-              <th className="py-2">ts</th>
-              <th>disp_mm</th>
-              <th>voltage_dc</th>
-              <th>adc_raw</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stream.slice(-50).map((d, i) => (
-              <tr key={i} className="border-t border-white/10">
-                <td className="py-2">{new Date(d.ts).toLocaleTimeString()}</td>
-                <td>{d.disp_mm}</td>
-                <td>{d.voltage_dc}</td>
-                <td>{d.adc_raw}</td>
-              </tr>
-            ))}
-            {stream.length === 0 && (
-              <tr>
-                <td className="py-4 opacity-60" colSpan={4}>Sin datos aún.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          {/* Gráfico 2 — Real (tu LiveChart de disp_mm) */}
+          <LiveChart
+            title="GRÁFICO 2 — Desplazamiento real (disp_mm) vs tiempo"
+            unit="mm"
+            valueKey="disp_mm"
+            data={stream}
+            now={now}
+            windowSec={60}
+            yMin={0}
+            yMax={5}
+          />
+
+          {/* Gráfico 3 — Predictivo (placeholder) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-2 font-semibold">GRÁFICO 3 — Desplazamiento predictivo (IA + FEM + Real)</div>
+            <div className="h-[180px] rounded-xl bg-black/30" />
+            <div className="mt-2 text-xs text-white/60">Comparación de curvas y umbrales.</div>
+          </div>
+        </div>
+
+        {/* Columna DERECHA (video Ely secundario + tarjeta explicativa) */}
+        <div className="flex flex-col gap-6">
+          {/* Ely secundario (placeholder video/imagen) */}
+          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+            <div className="relative aspect-video w-full">
+              <video
+                className="absolute inset-0 h-full w-full object-cover"
+                src={ELY_VIDEO}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+              <div className="absolute inset-0 bg-black/30" />
+            </div>
+            <div className="p-4 text-sm">
+              Arriba, video de <strong>Ely</strong> explicando la predicción actual y
+              ofreciendo correr un escenario a 7 días.
+            </div>
+          </div>
+
+          {/* Tarjeta explicativa (diagnóstico extendido, sin estado normativo por ahora) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
+            <p className="text-sm text-white/80">
+              Aquí se mostrará cómo evoluciona la deflexión en tiempo real, comparada con el
+              modelo FEM y con las predicciones de IA. Si la predicción muestra riesgo,
+              se activará una alerta.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Card({ title, value }) {
-  return (
-    <div className="bg-black/40 rounded-lg p-4">
-      <div className="text-xs opacity-70">{title}</div>
-      <div className="text-2xl font-semibold">{value}</div>
-    </div>
-  );
-}
+/* ===================== COMPONENTES REUTILIZADOS ===================== */
 
 function LiveChart({
   title, unit = '', valueKey = 'value', data = [], now,
@@ -168,4 +265,5 @@ function LiveChart({
     </div>
   );
 }
+
 
