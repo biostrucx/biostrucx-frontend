@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import Dashboard from './components/Dashboard';
 import Launchpad from './components/Launchpad';
-import Launchpad from './components/AboutUs';
+import AboutUs from './components/AboutUs';
 import GlobalWarming from './components/GlobalWarming';
 
 export default function App() {
