@@ -27,6 +27,7 @@ const Navbar = () => {
   const isLaunchpad = pathname.startsWith('/launchpad');
   const isGW = pathname.startsWith('/global-warming');
   const isLive = pathname.startsWith('/dashboard');
+  const isVision = pathname.startsWith('/aboutus'); // <-- added
 
   return (
     <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
@@ -58,6 +59,13 @@ const Navbar = () => {
           >
             Home
           </button>
+          {/* <-- added button next to Home */}
+          <button
+            onClick={() => go('/aboutus')}
+            className={`uppercase ${isVision ? 'text-white' : 'text-white/70 hover:text-white'}`}
+          >
+            Our Vision
+          </button>
           <button
             onClick={() => go('/launchpad')}
             className={`uppercase ${isLaunchpad ? 'text-white' : 'text-white/70 hover:text-white'}`}
@@ -84,6 +92,8 @@ const Navbar = () => {
       {open && (
         <div className="md:hidden bg-black/90 backdrop-blur-xl border-t border-white/10 flex flex-col px-4 py-3 space-y-2 text-sm font-semibold">
           <button onClick={() => go('/')} className={`${isHome ? 'text-white' : 'text-white/70 hover:text-white'}`}>Home</button>
+          {/* <-- added in mobile menu */}
+          <button onClick={() => go('/aboutus')} className={`${isVision ? 'text-white' : 'text-white/70 hover:text-white'}`}>Our Vision</button>
           <button onClick={() => go('/launchpad')} className={`${isLaunchpad ? 'text-white' : 'text-white/70 hover:text-white'}`}>Launchpad</button>
           <button onClick={() => go('/global-warming')} className={`${isGW ? 'text-white' : 'text-white/70 hover:text-white'}`}>Global Warming</button>
           <button onClick={() => go('/dashboard/jeimie')} className="flex items-center text-white">
@@ -97,8 +107,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
-
-
-
