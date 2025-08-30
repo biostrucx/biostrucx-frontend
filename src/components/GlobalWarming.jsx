@@ -3,8 +3,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Globe2, Waves, Activity } from "lucide-react";
 
-// ⚠️ Archivos en: src/assets/
-import EarthVideo from "../assets/earth-loop.mp4";
+// ❌ Quitamos el video local
+// import EarthVideo from "../assets/earth-loop.mp4";
 
 export default function GlobalWarming() {
   const cards = [
@@ -46,14 +46,17 @@ export default function GlobalWarming() {
     { icon: Activity, label: "Sensor twin", value: "Real-time ready" },
   ];
 
+  // ✅ Cloudinary (asset directo, no embed)
+  const VIDEO_SRC =
+    "https://res.cloudinary.com/di4esyfmv/video/upload/earth-loop_wd7hay.mp4";
+
   return (
     <section className="relative min-h-[calc(100vh-72px)] w-full overflow-hidden bg-black text-white">
       {/* ===== Background video capa ===== */}
       <div className="absolute inset-0 z-0">
         <video
-          // 👇 Opción 1: video completo en móvil (object-contain) y cover en desktop
           className="h-full w-full object-contain md:object-cover opacity-80"
-          src={EarthVideo}
+          src={VIDEO_SRC}
           autoPlay
           muted
           loop
@@ -164,3 +167,4 @@ export default function GlobalWarming() {
     </section>
   );
 }
+
