@@ -16,6 +16,7 @@ export default function App() {
         <Route path="/" element={<HeroSection />} />
         <Route path="/dashboard/:clientid" element={<Dashboard />} />
         <Route path="/launchpad" element={<Launchpad />} />
+         <Route path="/AboutUs" element={<AboutUs />} />
         <Route path="/global-warming" element={<GlobalWarming />} />
         {/* opcional: redirige/cae al home */}
         <Route path="*" element={<HeroSection />} />
