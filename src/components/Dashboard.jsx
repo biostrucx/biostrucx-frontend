@@ -11,6 +11,19 @@ export default function Dashboard() {
   const [err, setErr] = useState('');
   const [now, setNow] = useState(Date.now());
 
+  // ---- FEM (nuevo) ----
+  const [fem, setFem] = useState(null);
+  async function fetchFem() {
+    try {
+      const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
+      const j = await r.json();
+      setFem(j || null);
+    } catch {
+      setFem(null);
+    }
+  }
+  // ---------------------
+
   async function fetchData() {
     try {
       setErr('');
@@ -21,7 +34,6 @@ export default function Dashboard() {
       const l = await lRes.json();
       const s = await sRes.json();
 
-      // 👇 Conversión de ts a número (epoch ms)
       setLatest(l || null);
       setStream(Array.isArray(s) ? s.map(d => ({ ...d, ts: new Date(d.ts).getTime() })) : []);
     } catch (e) {
@@ -33,12 +45,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
+    fetchFem(); // <-- FEM (nuevo)
     const idPoll = setInterval(fetchData, 5000);
     const idTick = setInterval(() => setNow(Date.now()), 1000);
     return () => { clearInterval(idPoll); clearInterval(idTick); };
   }, [clientid]);
 
-  // 🎥 Video Ely (Cloudinary, asset directo)
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
 
   return (
@@ -49,7 +61,6 @@ export default function Dashboard() {
       {err && <div className="text-red-400">{err}</div>}
 
       {/* ===================== SECCIÓN 1 (arriba) ===================== */}
-      {/* Layout: 2 columnas x 2 filas (como tu primera imagen) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
         {/* Columna IZQUIERDA */}
         <div className="flex flex-col gap-6">
@@ -86,12 +97,18 @@ export default function Dashboard() {
 
         {/* Columna DERECHA */}
         <div className="flex flex-col gap-6">
-          {/* B1: FEM (OpenSeesPy) — render general (placeholder) */}
+          {/* B1: FEM (OpenSeesPy) — estado/modelo */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-3 font-semibold">
               FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
             </div>
-            <div className="h-[220px] rounded-xl bg-black/30" />
+            <div className="h-[220px] rounded-xl bg-black/30 flex items-center justify-center text-sm">
+              {!fem
+                ? 'sin modelo'
+                : fem.status !== 'done'
+                  ? `estado: ${fem.status}`
+                  : 'modelo listo (viz recibido)'}
+            </div>
             <p className="mt-3 text-xs text-white/70">
               Aquí irá el render/imagen de la viga con cargas/condiciones.
             </p>
@@ -110,7 +127,6 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {/* Tarjeta de información del/los sensores */}
               <div className="w-48 shrink-0 rounded-xl border border-white/10 bg-black/40 p-3">
                 <div className="text-xs opacity-70">Sensor info</div>
                 <div className="mt-1 text-sm">
@@ -125,9 +141,8 @@ export default function Dashboard() {
       </div>
 
       {/* ===================== SECCIÓN 2 (abajo) ===================== */}
-      {/* Layout: 2 columnas — izquierda con 3 gráficos apilados; derecha con Ely + tarjeta explicativa */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Columna IZQUIERDA (ocupa 2/3 en desktop) */}
+        {/* Columna IZQUIERDA */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Gráfico 1 — Teórico (placeholder) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -136,7 +151,7 @@ export default function Dashboard() {
             <div className="mt-2 text-xs text-white/60">Eje vertical: desplazamiento (mm) · Eje horizontal: tiempo</div>
           </div>
 
-          {/* Gráfico 2 — Real (tu LiveChart de disp_mm) */}
+          {/* Gráfico 2 — Real */}
           <LiveChart
             title="GRÁFICO 2 — Desplazamiento real (disp_mm) vs tiempo"
             unit="mm"
@@ -156,9 +171,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Columna DERECHA (video Ely secundario + tarjeta explicativa) */}
+        {/* Columna DERECHA */}
         <div className="flex flex-col gap-6">
-          {/* Ely secundario (placeholder video/imagen) */}
+          {/* Ely secundario */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
@@ -177,7 +192,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Tarjeta explicativa (diagnóstico extendido, sin estado normativo por ahora) */}
+          {/* Tarjeta explicativa */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
             <p className="text-sm text-white/80">
@@ -265,5 +280,3 @@ function LiveChart({
     </div>
   );
 }
-
-
