@@ -7,55 +7,88 @@ import FEMViewer from './FEMViewer';
 export default function Dashboard() {
   const { clientid } = useParams();
 
-  // ---- series y últimos ----
-  const [fem, setFem] = useState(null);            // último resultado (para el viewer 3D)
-  const [femSeries, setFemSeries] = useState([]);  // { ts, u_teo_mm }
-  const [realSeries, setRealSeries] = useState([]);// { ts, disp_mm }
+  // Real (sensor)
+  const [latest, setLatest] = useState(null);
+  const [stream, setStream] = useState([]);
 
-  // auxiliares UI
+  // FEM
+  const [fem, setFem] = useState(null);         // último modelo (para tarjeta superior)
+  const [femSeries, setFemSeries] = useState([]); // serie fem para gráfico 1
+
+  // UI
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [now, setNow] = useState(Date.now());
 
-  async function fetchFem() {
+  // ====== FETCHS ======
+
+  // Sensores (real)
+  async function fetchData() {
     try {
       setErr('');
-
       const [lRes, sRes] = await Promise.all([
-        fetch(`${BASE}/api/simulations/${clientid}/latest`),
-        fetch(`${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`)
+        fetch(`${BASE}/api/sensors/latest/${clientid}`),
+        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
       ]);
+      const l = await lRes.json();
+      const s = await sRes.json();
 
-      const latest = await lRes.json();
-      const series = await sRes.json();
-
-      setFem(latest || null);
-
-      const femS = Array.isArray(series?.fem)
-        ? series.fem.map(d => ({ ...d, ts: new Date(d.ts).getTime() }))
-        : [];
-      const realS = Array.isArray(series?.real)
-        ? series.real.map(d => ({ ...d, ts: new Date(d.ts).getTime() }))
-        : [];
-
-      setFemSeries(femS);
-      setRealSeries(realS);
+      setLatest(l || null);
+      // normaliza ts -> epoch ms
+      setStream(Array.isArray(s) ? s.map(d => ({ ...d, ts: new Date(d.ts).getTime() })) : []);
     } catch (e) {
-      console.error(e);
       setErr('No se pudo cargar datos.');
-      setFem(null);
-      setFemSeries([]);
-      setRealSeries([]);
     } finally {
       setLoading(false);
     }
   }
 
+  // FEM latest para la tarjeta superior
+  async function fetchFem() {
+    try {
+      const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
+      const j = await r.json();
+      setFem(j || null);
+    } catch {
+      setFem(null);
+    }
+  }
+
+  // FEM series para gráfico 1
+  async function fetchFemSeries() {
+    try {
+      const r = await fetch(`${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`);
+      const j = await r.json();
+
+      const fem = Array.isArray(j?.fem)
+        ? j.fem.map(d => ({ ts: new Date(d.ts).getTime(), v: Number(d.fem_mm) }))
+        : [];
+      setFemSeries(fem);
+
+      // Si quisieras sustituir el real por el del endpoint, descomenta:
+      // const real = Array.isArray(j?.real)
+      //   ? j.real.map(d => ({ ts: new Date(d.ts).getTime(), disp_mm: Number(d.disp_mm) }))
+      //   : [];
+      // setStream(real);
+    } catch (e) {
+      console.error('fetchFemSeries error', e);
+    }
+  }
+
   useEffect(() => {
+    fetchData();
     fetchFem();
-    const idPoll = setInterval(fetchFem, 5000);
+    fetchFemSeries();
+
+    const idPollReal = setInterval(fetchData, 5000);
+    const idPollFem = setInterval(fetchFemSeries, 5000);
     const idTick = setInterval(() => setNow(Date.now()), 1000);
-    return () => { clearInterval(idPoll); clearInterval(idTick); };
+
+    return () => {
+      clearInterval(idPollReal);
+      clearInterval(idPollFem);
+      clearInterval(idTick);
+    };
   }, [clientid]);
 
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
@@ -67,11 +100,12 @@ export default function Dashboard() {
       {loading && <div>Cargando…</div>}
       {err && <div className="text-red-400">{err}</div>}
 
-      {/* ===================== SECCIÓN 1 ===================== */}
+      {/* ===================== SECCIÓN 1 (arriba) ===================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
+
         {/* Columna IZQUIERDA */}
         <div className="flex flex-col gap-6">
-          {/* A1: Video Ely */}
+          {/* A1: Video Ely + mensaje bienvenida */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
@@ -97,31 +131,27 @@ export default function Dashboard() {
             <div className="h-[220px] rounded-xl bg-black/30" />
             <p className="mt-3 text-xs text-white/70">
               Mapa interactivo para ver dónde está instalado el sensor (Wi-Fi/MQTT/HTTP/SIM).
+              Más adelante se podrá hacer <em>click</em> para ver país/ciudad/estructura.
             </p>
           </div>
         </div>
 
-        {/* Columna DERECHA — FEM 3D / estado */}
+        {/* Columna DERECHA – FEM model */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">
-              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
-            </div>
-            <div className="h-[220px] rounded-xl bg-black/30">
-              {fem && fem.status === 'done' ? (
-                <FEMViewer viz={fem.viz} />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm">
-                  {!fem ? 'sin modelo' : `estado: ${fem.status}`}
-                </div>
-              )}
-            </div>
-            <p className="mt-3 text-xs text-white/70">
-              Aquí irá el render/imagen de la viga con cargas/condiciones.
-            </p>
+          <div className="h-[220px] rounded-xl bg-black/30">
+            {fem && fem.status === 'done' ? (
+              <FEMViewer viz={fem.viz} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm">
+                {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+              </div>
+            )}
           </div>
+          <p className="mt-3 text-xs text-white/70">
+            Aquí irá el render/imagen de la viga con cargas/condiciones.
+          </p>
 
-          {/* B2: FEM — Ubicación del sensor (placeholder) + tarjeta */}
+          {/* B2: FEM — Ubicación del sensor (placeholder) + tarjeta de sensor */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -144,33 +174,39 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div>{/* fin col derecha */}
       </div>
 
-      {/* ===================== SECCIÓN 2 ===================== */}
+      {/* ===================== SECCIÓN 2 (abajo) ===================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Columna IZQUIERDA (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Gráfico 1 — Serie teórica FEM */}
+
+          {/* Gráfico 1 — Teórico (FEM) */}
           <LiveChart
             title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
             unit="mm"
-            valueKey="u_teo_mm"
+            valueKey="v"
             data={femSeries}
             now={now}
             windowSec={300}
+            yMin={0}
+            yMax={5}
           />
 
-          {/* Gráfico 2 — Serie real (sensor) */}
+          {/* Gráfico 2 — Real (disp_mm) */}
           <LiveChart
             title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
             unit="mm"
             valueKey="disp_mm"
-            data={realSeries}
+            data={stream}
             now={now}
             windowSec={300}
+            yMin={0}
+            yMax={5}
           />
 
-          {/* Gráfico 3 — (placeholder) */}
+          {/* Gráfico 3 — Predictivo (placeholder) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-2 font-semibold">GRÁFICO 3 — Desplazamiento predictivo (IA + FEM + Real)</div>
             <div className="h-[180px] rounded-xl bg-black/30" />
@@ -178,8 +214,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Columna derecha: Ely + tarjeta */}
+        {/* Columna DERECHA */}
         <div className="flex flex-col gap-6">
+          {/* Ely secundario */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
@@ -193,14 +230,18 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-black/30" />
             </div>
             <div className="p-4 text-sm">
-              Video de <strong>Ely</strong> explicando la predicción actual.
+              Arriba, video de <strong>Ely</strong> explicando la predicción actual y
+              ofreciendo correr un escenario a 7 días.
             </div>
           </div>
 
+          {/* Tarjeta explicativa */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
             <p className="text-sm text-white/80">
-              Evolución de la deflexión real vs FEM. Alarmas próximamente.
+              Aquí se mostrará cómo evoluciona la deflexión en tiempo real, comparada con el
+              modelo FEM y con las predicciones de IA. Si la predicción muestra riesgo,
+              se activará una alerta.
             </p>
           </div>
         </div>
@@ -209,10 +250,10 @@ export default function Dashboard() {
   );
 }
 
-/* ===================== COMPONENTE CHART (1 serie) ===================== */
+/* ===================== COMPONENTE REUTILIZADO ===================== */
 function LiveChart({
   title, unit = '', valueKey = 'value', data = [], now,
-  windowSec = 60, yMin, yMax, height = 220
+  windowSec = 60, yMin = 0, yMax = 1, height = 220
 }) {
   const width = 640;
   const pad = { l: 48, r: 16, t: 16, b: 28 };
@@ -225,12 +266,9 @@ function LiveChart({
   let minV = yMin, maxV = yMax;
   const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
   if (vals.length) {
-    if (minV === undefined) minV = Math.min(...vals);
-    if (maxV === undefined) maxV = Math.max(...vals);
+    minV = yMin ?? Math.min(...vals);
+    maxV = yMax ?? Math.max(...vals);
     if (minV === maxV) { minV -= 1; maxV += 1; }
-  } else {
-    minV = minV ?? 0;
-    maxV = maxV ?? 1;
   }
 
   const xScale = (ts) => {
@@ -284,4 +322,5 @@ function LiveChart({
     </div>
   );
 }
+
 
