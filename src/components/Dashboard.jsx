@@ -28,6 +28,7 @@ export default function Dashboard() {
       setErr('');
       const [lRes, sRes] = await Promise.all([
         fetch(`${BASE}/api/sensors/latest/${clientid}`, { cache: 'no-store' }),
+        // Este endpoint sí soporta "5m"; lo dejamos igual
         fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`, { cache: 'no-store' })
       ]);
 
@@ -38,10 +39,12 @@ export default function Dashboard() {
       const s = await sRes.json();
 
       setLatest(l || null);
+
       // normaliza ts -> epoch ms
       const rows = Array.isArray(s) ? s : [];
       setStream(rows.map(d => ({ ...d, ts: new Date(d.ts).getTime() })));
     } catch (e) {
+      console.error('fetchData error:', e);
       setErr('No se pudo cargar datos.');
       setLatest(null);
       setStream([]);
@@ -54,7 +57,12 @@ export default function Dashboard() {
   async function fetchFem() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`, { cache: 'no-store' });
-      if (!r.ok) { setFem({ status: 'error' }); return; }
+      if (!r.ok) {
+        const msg = await r.text().catch(() => '');
+        console.error('simulations/latest non-OK:', r.status, msg);
+        setFem({ status: 'error' });
+        return;
+      }
       const j = await r.json();
       if (!j || j.error) { setFem({ status: 'error' }); return; }
       // normaliza
@@ -64,19 +72,25 @@ export default function Dashboard() {
         viz: j.viz ?? null,
         params: j.params ?? null,
       });
-    } catch {
+    } catch (e) {
+      console.error('fetchFem error:', e);
       setFem({ status: 'error' });
     }
   }
 
-  // FEM series (gráfico 1)
+  // FEM series (gráfico 1) — usa windowSec=300 para evitar 500 por "5m"
   async function fetchFemSeries() {
     try {
       const r = await fetch(
-        `${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`,
+        `${BASE}/api/simulations/${clientid}/series?windowSec=300&limit=300`,
         { cache: 'no-store' }
       );
-      if (!r.ok) { setFemSeries([]); return; }
+      if (!r.ok) {
+        const msg = await r.text().catch(() => '');
+        console.error('simulations/series non-OK:', r.status, msg);
+        setFemSeries([]);
+        return;
+      }
       const j = await r.json();
       const fem = Array.isArray(j?.fem)
         ? j.fem.map(d => ({ ts: new Date(d.ts).getTime(), v: Number(d.fem_mm) }))
@@ -300,47 +314,8 @@ function LiveChart({
   };
 
   const points = rows
-    .filter(r => Number.isFinite(Number(r[valueKey])))
-    .map(r => `${xScale(r.ts)},${yScale(Number(r[valueKey]))}`)
-    .join(' ');
+    .filter(r => Number.is
 
-  const ticksX = 5, ticksY = 5;
-  const xTicks = Array.from({ length: ticksX + 1 }, (_, i) => start + (i * (end - start)) / ticksX);
-  const yTicks = Array.from({ length: ticksY + 1 }, (_, i) => minV + (i * (maxV - minV)) / ticksY);
-
-  return (
-    <div className="rounded-2xl bg-neutral-900/70 p-4 shadow-lg">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="text-xs text-neutral-400">Window: {windowSec}s</div>
-      </div>
-
-      <div className="h-56 w-full">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-          {xTicks.map((t, i) => (
-            <line key={`x${i}`} x1={xScale(t)} x2={xScale(t)} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.12" />
-          ))}
-          {yTicks.map((v, i) => (
-            <line key={`y${i}`} x1={pad.l} x2={width - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="currentColor" opacity="0.12" />
-          ))}
-          <line x1={pad.l} x2={width - pad.r} y1={height - pad.b} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
-          <line x1={pad.l} x2={pad.l} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
-          {xTicks.map((t, i) => (
-            <text key={`xt${i}`} x={xScale(t)} y={height - 6} textAnchor="middle" className="fill-neutral-400 text-[10px]">
-              {new Date(t).toLocaleTimeString([], { hour12: false })}
-            </text>
-          ))}
-          {yTicks.map((v, i) => (
-            <text key={`yt${i}`} x={pad.l - 6} y={yScale(v)} textAnchor="end" dominantBaseline="middle" className="fill-neutral-400 text-[10px]">
-              {Number(v.toFixed(2))}{unit ? ` ${unit}` : ''}
-            </text>
-          ))}
-          {points && <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />}
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 
 
