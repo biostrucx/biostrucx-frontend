@@ -12,8 +12,8 @@ export default function Dashboard() {
   const [stream, setStream] = useState([]);
 
   // FEM
-  const [fem, setFem] = useState(null);         // último modelo (para tarjeta superior)
-  const [femSeries, setFemSeries] = useState([]); // serie fem para gráfico 1
+  const [fem, setFem] = useState(null);           // último modelo (tarjeta superior)
+  const [femSeries, setFemSeries] = useState([]); // serie para gráfico 1 (FEM vs tiempo)
 
   // UI
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function Dashboard() {
     }
   }
 
-  // FEM latest para la tarjeta superior
+  // FEM latest (para la tarjeta superior)
   async function fetchFem() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
@@ -54,22 +54,15 @@ export default function Dashboard() {
     }
   }
 
-  // FEM series para gráfico 1
+  // FEM series (gráfico 1)
   async function fetchFemSeries() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`);
       const j = await r.json();
-
       const fem = Array.isArray(j?.fem)
         ? j.fem.map(d => ({ ts: new Date(d.ts).getTime(), v: Number(d.fem_mm) }))
         : [];
       setFemSeries(fem);
-
-      // Si quisieras sustituir el real por el del endpoint, descomenta:
-      // const real = Array.isArray(j?.real)
-      //   ? j.real.map(d => ({ ts: new Date(d.ts).getTime(), disp_mm: Number(d.disp_mm) }))
-      //   : [];
-      // setStream(real);
     } catch (e) {
       console.error('fetchFemSeries error', e);
     }
@@ -92,6 +85,11 @@ export default function Dashboard() {
   }, [clientid]);
 
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
+
+  // viz para la tarjeta “sensor” (mismo modelo + marker del sensor si existe)
+  const vizWithMarker = fem?.viz
+    ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] }
+    : null;
 
   return (
     <div className="p-6">
@@ -136,45 +134,46 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Columna DERECHA – FEM model */}
+        {/* Columna DERECHA – FEM */}
         <div className="flex flex-col gap-6">
-          <div className="h-[220px] rounded-xl bg-black/30">
-            {fem && fem.status === 'done' ? (
-              <FEMViewer viz={fem.viz} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm">
-                {!fem ? 'sin modelo' : `estado: ${fem.status}`}
-              </div>
-            )}
-          </div>
-          <p className="mt-3 text-xs text-white/70">
-            Aquí irá el render/imagen de la viga con cargas/condiciones.
-          </p>
 
-          {/* B2: FEM — Ubicación del sensor (placeholder) + tarjeta de sensor */}
+          {/* FEM teórico (arriba) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="text-sm mb-3 font-semibold">
-                  FEM — Ubicación del sensor (BSX–FARADAY1)
-                </div>
-                <div className="h-[180px] rounded-xl bg-black/30" />
-                <p className="mt-3 text-xs text-white/70">
-                  Visualización destacando el punto exacto donde está el sensor (marcador rojo).
-                </p>
-              </div>
-
-              <div className="w-48 shrink-0 rounded-xl border border-white/10 bg-black/40 p-3">
-                <div className="text-xs opacity-70">Sensor info</div>
-                <div className="mt-1 text-sm">
-                  <div><span className="opacity-70">Modelo:</span> BSX–FARADAY1</div>
-                  <div><span className="opacity-70">Cantidad:</span> 1</div>
-                  <div><span className="opacity-70">Cliente:</span> {clientid}</div>
-                </div>
-              </div>
+            <div className="text-sm mb-3 font-semibold">
+              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
             </div>
+
+            <div className="h-[220px] rounded-xl bg-black/30">
+              {fem && fem.status === 'done'
+                ? <FEMViewer viz={fem.viz} height={220} />
+                : (
+                  <div className="w-full h-full flex items-center justify-center text-sm">
+                    {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+                  </div>
+                )}
+            </div>
+
+            <p className="mt-3 text-xs text-white/70">
+              Aquí irá el render/imagen de la viga con cargas/condiciones.
+            </p>
           </div>
-        </div>{/* fin col derecha */}
+
+          {/* FEM con ubicación del sensor (abajo) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-3 font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
+
+            <div className="h-[180px] rounded-xl bg-black/30">
+              {vizWithMarker
+                ? <FEMViewer viz={vizWithMarker} height={180} />
+                : <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>}
+            </div>
+
+            <p className="mt-3 text-xs text-white/70">
+              Visualización destacando el punto exacto donde está el sensor (marcador rojo).
+            </p>
+          </div>
+
+        </div>
       </div>
 
       {/* ===================== SECCIÓN 2 (abajo) ===================== */}
