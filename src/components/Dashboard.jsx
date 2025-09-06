@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BASE } from '../services/api';
+import FEMViewer from './FEMViewer';
+
 
 export default function Dashboard() {
   const { clientid } = useParams();
@@ -96,23 +98,19 @@ export default function Dashboard() {
         </div>
 
         {/* Columna DERECHA */}
-        <div className="flex flex-col gap-6">
-          {/* B1: FEM (OpenSeesPy) — estado/modelo */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">
-              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
-            </div>
-            <div className="h-[220px] rounded-xl bg-black/30 flex items-center justify-center text-sm">
-              {!fem
-                ? 'sin modelo'
-                : fem.status !== 'done'
-                  ? `estado: ${fem.status}`
-                  : 'modelo listo (viz recibido)'}
-            </div>
-            <p className="mt-3 text-xs text-white/70">
-              Aquí irá el render/imagen de la viga con cargas/condiciones.
-            </p>
-          </div>
+
+           <div className="h-[220px] rounded-xl bg-black/30">
+  {fem && fem.status === 'done' ? (
+    <FEMViewer viz={fem.viz} />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-sm">
+      {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+    </div>
+  )}
+</div>
+<p className="mt-3 text-xs text-white/70">
+  Aquí irá el render/imagen de la viga con cargas/condiciones.
+</p>
 
           {/* B2: FEM — Ubicación del sensor (placeholder) + tarjeta de sensor */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
