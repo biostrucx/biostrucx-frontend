@@ -97,7 +97,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Columna DERECHA */}
+        {/* Columna DERECHA fem model  */}
 
            <div className="h-[220px] rounded-xl bg-black/30">
   {fem && fem.status === 'done' ? (
@@ -106,7 +106,7 @@ export default function Dashboard() {
     <div className="w-full h-full flex items-center justify-center text-sm">
       {!fem ? 'sin modelo' : `estado: ${fem.status}`}
     </div>
-  )}
+  })
 </div>
 <p className="mt-3 text-xs text-white/70">
   Aquí irá el render/imagen de la viga con cargas/condiciones.
