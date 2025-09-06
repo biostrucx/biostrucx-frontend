@@ -27,17 +27,24 @@ export default function Dashboard() {
     try {
       setErr('');
       const [lRes, sRes] = await Promise.all([
-        fetch(`${BASE}/api/sensors/latest/${clientid}`),
-        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`)
+        fetch(`${BASE}/api/sensors/latest/${clientid}`, { cache: 'no-store' }),
+        fetch(`${BASE}/api/sensors/stream/${clientid}?window=5m&limit=300`, { cache: 'no-store' })
       ]);
+
+      if (!lRes.ok) throw new Error('latest');
+      if (!sRes.ok) throw new Error('stream');
+
       const l = await lRes.json();
       const s = await sRes.json();
 
       setLatest(l || null);
       // normaliza ts -> epoch ms
-      setStream(Array.isArray(s) ? s.map(d => ({ ...d, ts: new Date(d.ts).getTime() })) : []);
+      const rows = Array.isArray(s) ? s : [];
+      setStream(rows.map(d => ({ ...d, ts: new Date(d.ts).getTime() })));
     } catch (e) {
       setErr('No se pudo cargar datos.');
+      setLatest(null);
+      setStream([]);
     } finally {
       setLoading(false);
     }
@@ -46,18 +53,30 @@ export default function Dashboard() {
   // FEM latest (para la tarjeta superior)
   async function fetchFem() {
     try {
-      const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
+      const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`, { cache: 'no-store' });
+      if (!r.ok) { setFem({ status: 'error' }); return; }
       const j = await r.json();
-      setFem(j || null);
+      if (!j || j.error) { setFem({ status: 'error' }); return; }
+      // normaliza
+      setFem({
+        status: j.status ?? 'done',
+        ts: j.ts ?? null,
+        viz: j.viz ?? null,
+        params: j.params ?? null,
+      });
     } catch {
-      setFem(null);
+      setFem({ status: 'error' });
     }
   }
 
   // FEM series (gráfico 1)
   async function fetchFemSeries() {
     try {
-      const r = await fetch(`${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`);
+      const r = await fetch(
+        `${BASE}/api/simulations/${clientid}/series?window=5m&limit=300`,
+        { cache: 'no-store' }
+      );
+      if (!r.ok) { setFemSeries([]); return; }
       const j = await r.json();
       const fem = Array.isArray(j?.fem)
         ? j.fem.map(d => ({ ts: new Date(d.ts).getTime(), v: Number(d.fem_mm) }))
@@ -65,6 +84,7 @@ export default function Dashboard() {
       setFemSeries(fem);
     } catch (e) {
       console.error('fetchFemSeries error', e);
+      setFemSeries([]);
     }
   }
 
@@ -144,13 +164,13 @@ export default function Dashboard() {
             </div>
 
             <div className="h-[220px] rounded-xl bg-black/30">
-              {fem && fem.status === 'done'
-                ? <FEMViewer viz={fem.viz} height={220} />
-                : (
-                  <div className="w-full h-full flex items-center justify-center text-sm">
-                    {!fem ? 'sin modelo' : `estado: ${fem.status}`}
-                  </div>
-                )}
+              {fem?.viz ? (
+                <FEMViewer viz={fem.viz} height={220} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm">
+                  {fem?.status === 'error' ? 'error servidor' : 'sin modelo'}
+                </div>
+              )}
             </div>
 
             <p className="mt-3 text-xs text-white/70">
@@ -312,7 +332,7 @@ function LiveChart({
           ))}
           {yTicks.map((v, i) => (
             <text key={`yt${i}`} x={pad.l - 6} y={yScale(v)} textAnchor="end" dominantBaseline="middle" className="fill-neutral-400 text-[10px]">
-              {Number(v.toFixed(2))}
+              {Number(v.toFixed(2))}{unit ? ` ${unit}` : ''}
             </text>
           ))}
           {points && <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />}
@@ -321,5 +341,6 @@ function LiveChart({
     </div>
   );
 }
+
 
 
