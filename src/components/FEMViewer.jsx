@@ -1,135 +1,255 @@
 // src/components/FEMViewer.jsx
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import React, { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-/**
- * props:
- *  - viz: {
- *      vertices: number[] | number[][], // [x0,y0,z0,x1,y1,z1,...] o array de arrays
- *      indices: number[],               // triángulos (indexados)
- *      u_mag?: number[],                // desplazamiento por vértice (para color)
- *      marker?: [number, number, number]// posición del sensor (opcional)
- *    }
- *  - height: alto del canvas (px)
- *  - background: color de fondo
- */
-export default function FEMViewer({ viz, height = 220, background = '#0b0b0b' }) {
-  const mountRef = useRef(null);
+function colorMap(t) {
+  // t in [0,1] -> azul (bajo) a rojo (alto) pasando por magenta
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+  t = clamp(t);
+  const r = clamp(1.6 * t);
+  const g = clamp(0.2 * (1 - Math.abs(t - 0.5) * 2)); // valle en el centro
+  const b = clamp(1.0 * (1 - t) + 0.2 * (1 - Math.abs(t - 0.5) * 2));
+  return new THREE.Color(r, g, b);
+}
 
+export default function FEMViewer({ viz, marker, height = 220 }) {
+  const wrapRef = useRef(null);
+  const rendererRef = useRef(null);
+  const sceneRef = useRef(new THREE.Scene());
+  const cameraRef = useRef(null);
+  const controlsRef = useRef(null);
+  const meshRef = useRef(null);
+  const markerRef = useRef(null);
+  const edgesRef = useRef(null);
+  const animRef = useRef(0);
+
+  // init once
   useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
+    const wrap = wrapRef.current;
+    const scene = sceneRef.current;
 
-    // limpiar render previo
-    mount.innerHTML = '';
-
-    // renderer / escena / cámara
-    const w = mount.clientWidth || 600;
-    const h = height;
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(background);
-
-    const camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 1000);
+    // renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(w, h);
-    mount.appendChild(renderer.domElement);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearAlpha(0);
+    wrap.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    // luces
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    // camera
+    const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 1000);
+    cameraRef.current = cam;
+    scene.add(cam);
+
+    // lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x111111, 0.9);
+    scene.add(hemi);
     const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(2, 3, 4);
-    scene.add(dir);
+    dir.position.set(2, 3, 2);
+    cam.add(dir); // se mueve con cámara
+    scene.add(new THREE.AmbientLight(0x404040, 0.6));
 
-    // === Geometría desde viz ===
-    if (viz && Array.isArray(viz.vertices) && viz.vertices.length) {
-      // aplanar si viene [[x,y,z],...]
-      const flatVerts = Array.isArray(viz.vertices[0]) ? viz.vertices.flat() : viz.vertices;
-
-      const geom = new THREE.BufferGeometry();
-      const pos = new Float32Array(flatVerts);
-      geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-
-      if (Array.isArray(viz.indices) && viz.indices.length) {
-        geom.setIndex(viz.indices);
-      }
-      geom.computeVertexNormals();
-
-      // Colorear por desplazamiento (u_mag) si viene
-      if (Array.isArray(viz.u_mag) && viz.u_mag.length * 3 === pos.length) {
-        const u = viz.u_mag;
-        const uMin = Math.min(...u);
-        const uMax = Math.max(...u);
-        const colors = new Float32Array(u.length * 3);
-        for (let i = 0; i < u.length; i++) {
-          const t = (u[i] - uMin) / ((uMax - uMin) || 1); // 0..1
-          // gradiente simple azul→verde→rojo
-          const r = t;
-          const g = Math.max(0, 1 - Math.abs(t - 0.5) * 2);
-          const b = 1 - t;
-          colors[i * 3 + 0] = r;
-          colors[i * 3 + 1] = g;
-          colors[i * 3 + 2] = b;
-        }
-        geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      }
-
-      const mat = new THREE.MeshPhongMaterial({
-        side: THREE.DoubleSide,
-        vertexColors: !!geom.getAttribute('color'),
-      });
-      const mesh = new THREE.Mesh(geom, mat);
-      scene.add(mesh);
-
-      // Marcador de sensor (opcional)
-      if (Array.isArray(viz.marker) && viz.marker.length === 3) {
-        const s = new THREE.Mesh(
-          new THREE.SphereGeometry(0.02, 16, 16),
-          new THREE.MeshBasicMaterial({ color: 0xff0000 })
-        );
-        s.position.set(viz.marker[0], viz.marker[1], viz.marker[2]);
-        scene.add(s);
-      }
-
-      // encuadrar la cámara
-      geom.computeBoundingSphere();
-      const bs = geom.boundingSphere;
-      if (bs) {
-        const dist = bs.radius * 2.5;
-        camera.position.set(bs.center.x + dist, bs.center.y + dist * 0.8, bs.center.z + dist);
-        camera.lookAt(bs.center);
-      }
-    }
-
-    // controles
-    const controls = new OrbitControls(camera, renderer.domElement);
+    // controls
+    const controls = new OrbitControls(cam, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controlsRef.current = controls;
+
+    const onResize = () => {
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      renderer.setSize(w, h, false);
+      cam.aspect = w / h;
+      cam.updateProjectionMatrix();
+      // mantener framing razonable al cambiar layout
+      if (meshRef.current) frameObject(meshRef.current);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
 
     // render loop
-    let raf;
     const tick = () => {
       controls.update();
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(tick);
+      renderer.render(scene, cam);
+      animRef.current = requestAnimationFrame(tick);
     };
     tick();
 
-    // responsive
-    const onResize = () => {
-      const W = mount.clientWidth || 600;
-      renderer.setSize(W, h);
-      camera.aspect = W / h;
-      camera.updateProjectionMatrix();
-    };
-    window.addEventListener('resize', onResize);
-
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener("resize", onResize);
+      controls.dispose();
       renderer.dispose();
-      mount.innerHTML = '';
+      wrap.removeChild(renderer.domElement);
+      // limpieza básica de objetos añadidos
+      [meshRef.current, markerRef.current, edgesRef.current].forEach((o) => {
+        if (o) scene.remove(o);
+      });
     };
-  }, [viz, height, background]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  return <div ref={mountRef} style={{ width: '100%', height }} />;
+  // build / update geometry when viz changes
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!viz || !viz.vertices || !viz.indices) return;
+
+    // clear previous
+    if (meshRef.current) scene.remove(meshRef.current);
+    if (edgesRef.current) scene.remove(edgesRef.current);
+
+    // flatten vertices if nested
+    const verts = Array.isArray(viz.vertices[0])
+      ? viz.vertices.flat()
+      : viz.vertices;
+    const idx = viz.indices;
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+    geom.setIndex(idx);
+
+    // optional per-vertex color from u_mag
+    let material;
+    if (Array.isArray(viz.u_mag) && viz.u_mag.length * 3 === verts.length) {
+      const vals = viz.u_mag.map(Number).filter(Number.isFinite);
+      const vmin = Math.min(...vals);
+      const vmax = Math.max(...vals);
+      const colors = new Float32Array(viz.u_mag.length * 3);
+      for (let i = 0; i < viz.u_mag.length; i++) {
+        const t =
+          vmax - vmin > 1e-8 ? (viz.u_mag[i] - vmin) / (vmax - vmin) : 0.5;
+        const c = colorMap(t);
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+      geom.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      material = new THREE.MeshStandardMaterial({
+        side: THREE.DoubleSide,
+        flatShading: true,
+        vertexColors: true,
+        metalness: 0.0,
+        roughness: 0.9,
+      });
+    } else {
+      material = new THREE.MeshStandardMaterial({
+        color: 0x7aa2ff,
+        side: THREE.DoubleSide,
+        flatShading: true,
+        metalness: 0.0,
+        roughness: 0.9,
+      });
+    }
+
+    const mesh = new THREE.Mesh(geom, material);
+    scene.add(mesh);
+    meshRef.current = mesh;
+
+    // edges overlay
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geom, 10),
+      new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.35 })
+    );
+    scene.add(edges);
+    edgesRef.current = edges;
+
+    // frame
+    frameObject(mesh);
+
+    // marker (sensor)
+    updateMarker();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viz]);
+
+  // update / add marker when marker prop changes
+  useEffect(() => {
+    updateMarker();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marker]);
+
+  // util: fit object to view & tune controls/camera distances
+  function frameObject(object3D) {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+
+    const box = new THREE.Box3().setFromObject(object3D);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const center = sphere.center;
+    const r = Math.max(sphere.radius, 1e-3);
+
+    // distancia desde la que se ve entero con FOV actual
+    const fov = THREE.MathUtils.degToRad(camera.fov);
+    const dist = r / Math.sin(fov / 2);
+
+    camera.near = r / 100;
+    camera.far = r * 100;
+    camera.updateProjectionMatrix();
+
+    // coloca cámara en diagonal
+    camera.position.set(center.x + dist * 0.9, center.y + dist * 0.6, center.z + dist * 0.9);
+    controls.target.copy(center);
+    controls.minDistance = r * 0.2;
+    controls.maxDistance = r * 20;
+    controls.update();
+  }
+
+  function updateMarker() {
+    const scene = sceneRef.current;
+    // decide posición: prop > viz.marker
+    const m = marker || viz?.marker;
+    if (!m || m.length < 3 || !meshRef.current) {
+      if (markerRef.current) {
+        scene.remove(markerRef.current);
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    const box = new THREE.Box3().setFromObject(meshRef.current);
+    const r = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 1e-3);
+
+    // esfera emisiva que escala con el tamaño del modelo
+    const geo = new THREE.SphereGeometry(r * 0.03, 24, 24);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xff4444,
+      emissive: 0xaa0000,
+      emissiveIntensity: 0.8,
+    });
+    const sph = new THREE.Mesh(geo, mat);
+    sph.position.set(m[0], m[1], m[2]);
+
+    // reemplaza anterior
+    if (markerRef.current) scene.remove(markerRef.current);
+    scene.add(sph);
+    markerRef.current = sph;
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      style={{ width: "100%", height, position: "relative", borderRadius: 12, overflow: "hidden" }}
+    >
+      {/* Botón FIT */}
+      <button
+        onClick={() => meshRef.current && frameObject(meshRef.current)}
+        style={{
+          position: "absolute",
+          right: 8,
+          bottom: 8,
+          fontSize: 12,
+          padding: "4px 8px",
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          color: "#fff",
+          borderRadius: 6,
+          backdropFilter: "blur(4px)",
+          cursor: "pointer",
+        }}
+      >
+        Fit
+      </button>
+    </div>
+  );
 }
