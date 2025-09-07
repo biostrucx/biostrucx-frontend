@@ -35,7 +35,7 @@ export default function FEMViewer({
   const controlsRef = useRef(null);
 
   const meshRef = useRef(null);
-  const wireRef = useRef(null);   // NUEVO: capa wireframe
+  const wireRef = useRef(null);
   const markerRef = useRef(null);
 
   const animRef = useRef(0);
@@ -49,10 +49,13 @@ export default function FEMViewer({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearAlpha(0);
+    // Asegura que el wheel/gestos lleguen al canvas
+    renderer.domElement.style.touchAction = "none";
+    renderer.domElement.tabIndex = 0;
     wrap.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 1000);
+    const cam = new THREE.PerspectiveCamera(35, 1, 0.001, 5_000); // near/far más amplios
     cameraRef.current = cam;
     scene.add(cam);
 
@@ -66,6 +69,11 @@ export default function FEMViewer({
     const controls = new OrbitControls(cam, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
+    // === Ajustes de maniobrabilidad ===
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.8;
     controlsRef.current = controls;
 
     const onResize = () => {
@@ -94,7 +102,6 @@ export default function FEMViewer({
       if (renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
       }
-      // limpiar objetos
       [meshRef.current, wireRef.current, markerRef.current].forEach((o) => {
         if (o) scene.remove(o);
       });
@@ -154,13 +161,13 @@ export default function FEMViewer({
     scene.add(mesh);
     meshRef.current = mesh;
 
-    // === NUEVO: Wireframe (malla) con todas las aristas ===
+    // Wireframe sutil (todas las aristas)
     if (showMesh) {
-      const wfGeom = new THREE.WireframeGeometry(geom); // incluye TODAS las aristas
+      const wfGeom = new THREE.WireframeGeometry(geom);
       const wfMat = new THREE.LineBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: meshOpacity, // sutil
+        opacity: meshOpacity,
       });
       const wf = new THREE.LineSegments(wfGeom, wfMat);
       scene.add(wf);
@@ -185,20 +192,27 @@ export default function FEMViewer({
 
     const box = new THREE.Box3().setFromObject(object3D);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const center = sphere.center;
-    const r = Math.max(sphere.radius, 1e-3);
+    const center = sphere.center.clone();
+    const r = Math.max(sphere.radius, 1e-6);
 
+    // Distancia inicial un poco más cercana
     const fov = THREE.MathUtils.degToRad(camera.fov);
-    const dist = r / Math.sin(fov / 2);
+    const dist = r / Math.sin(fov / 2) * 0.9;
 
-    camera.near = r / 100;
-    camera.far = r * 100;
+    // === Límites muy permisivos para zoom ===
+    camera.near = Math.max(r / 5000, 1e-6);  // muy pequeño: permite acercar sin clipping
+    camera.far  = r * 2000;                  // muy grande para no cortar al alejar
     camera.updateProjectionMatrix();
 
-    camera.position.set(center.x + dist * 0.9, center.y + dist * 0.6, center.z + dist * 0.9);
+    camera.position.set(
+      center.x + dist * 0.9,
+      center.y + dist * 0.6,
+      center.z + dist * 0.9
+    );
+
     controls.target.copy(center);
-    controls.minDistance = r * 0.2;
-    controls.maxDistance = r * 20;
+    controls.minDistance = Math.max(r * 0.001, 1e-4); // puedes casi tocar el modelo
+    controls.maxDistance = r * 200;                   // alejar bastante
     controls.update();
   }
 
@@ -257,3 +271,4 @@ export default function FEMViewer({
     </div>
   );
 }
+
