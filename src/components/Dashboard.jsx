@@ -1,3 +1,4 @@
+// src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BASE } from '../services/api';
@@ -6,16 +7,22 @@ import FEMViewer from './FEMViewer';
 export default function Dashboard() {
   const { clientid } = useParams();
 
+  // Real (sensor)
   const [latest, setLatest] = useState(null);
   const [stream, setStream] = useState([]);
 
+  // FEM
   const [fem, setFem] = useState(null);
   const [femSeries, setFemSeries] = useState([]);
 
+  // UI
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [now, setNow] = useState(Date.now());
 
+  // ====== FETCHS ======
+
+  // Sensores (real)
   async function fetchData() {
     try {
       setErr('');
@@ -25,7 +32,9 @@ export default function Dashboard() {
       ]);
       const l = await lRes.json();
       const s = await sRes.json();
+
       setLatest(l || null);
+      // normaliza ts -> epoch ms
       setStream(Array.isArray(s) ? s.map(d => ({ ...d, ts: new Date(d.ts).getTime() })) : []);
     } catch {
       setErr('No se pudo cargar datos.');
@@ -34,6 +43,7 @@ export default function Dashboard() {
     }
   }
 
+  // FEM latest (para la tarjeta superior)
   async function fetchFem() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
@@ -44,6 +54,7 @@ export default function Dashboard() {
     }
   }
 
+  // FEM series (gráfico 1)
   async function fetchFemSeries() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/series?windowSec=300&limit=300`);
@@ -61,14 +72,24 @@ export default function Dashboard() {
     fetchData();
     fetchFem();
     fetchFemSeries();
-    const id1 = setInterval(fetchData, 5000);
-    const id2 = setInterval(fetchFemSeries, 5000);
-    const id3 = setInterval(() => setNow(Date.now()), 1000);
-    return () => { clearInterval(id1); clearInterval(id2); clearInterval(id3); };
+
+    const idPollReal = setInterval(fetchData, 5000);
+    const idPollFem = setInterval(fetchFemSeries, 5000);
+    const idTick = setInterval(() => setNow(Date.now()), 1000);
+
+    return () => {
+      clearInterval(idPollReal);
+      clearInterval(idPollFem);
+      clearInterval(idTick);
+    };
   }, [clientid]);
 
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
-  const vizWithMarker = fem?.viz ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] } : null;
+
+  // viz para la tarjeta “sensor” (mismo modelo + marker del sensor si existe)
+  const vizWithMarker = fem?.viz
+    ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] }
+    : null;
 
   return (
     <div className="p-6">
@@ -77,11 +98,22 @@ export default function Dashboard() {
       {loading && <div>Cargando…</div>}
       {err && <div className="text-red-400">{err}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      {/* ===================== SECCIÓN 1 (arriba) ===================== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
+
+        {/* Columna IZQUIERDA */}
         <div className="flex flex-col gap-6">
+          {/* A1: Video Ely + mensaje bienvenida */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
-              <video className="absolute inset-0 h-full w-full object-cover" src={ELY_VIDEO} autoPlay muted loop playsInline />
+              <video
+                className="absolute inset-0 h-full w-full object-cover"
+                src={ELY_VIDEO}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
               <div className="absolute inset-0 bg-black/30" />
             </div>
             <div className="p-4 text-sm">
@@ -89,54 +121,121 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* A2: Mapa 3D (placeholder) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-3 font-semibold">Mapa 3D — ubicación del sensor</div>
             <div className="h-[220px] rounded-xl bg-black/30" />
           </div>
         </div>
 
+        {/* Columna DERECHA – FEM */}
         <div className="flex flex-col gap-6">
+
+          {/* FEM teórico (arriba) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).</div>
+            <div className="text-sm mb-3 font-semibold">
+              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
+            </div>
+
             <div className="h-[220px] rounded-xl bg-black/30">
               {fem && fem.status === 'done'
                 ? <FEMViewer viz={fem.viz} height={220} />
-                : <div className="w-full h-full flex items-center justify-center text-sm">
+                : (
+                  <div className="w-full h-full flex items-center justify-center text-sm">
                     {!fem ? 'sin modelo' : `estado: ${fem.status}`}
-                  </div>}
+                  </div>
+                )}
             </div>
-            <p className="mt-3 text-xs text-white/70">Aquí irá el render/imagen de la viga con cargas/condiciones.</p>
+
+            <p className="mt-3 text-xs text-white/70">
+              Aquí irá el render/imagen de la viga con cargas/condiciones.
+            </p>
           </div>
 
+          {/* FEM con ubicación del sensor (abajo) */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-3 font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
+
             <div className="h-[180px] rounded-xl bg-black/30">
-              {vizWithMarker ? <FEMViewer viz={vizWithMarker} height={180} /> : <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>}
+              {vizWithMarker
+                ? <FEMViewer viz={vizWithMarker} height={180} />
+                : <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>}
             </div>
-            <p className="mt-3 text-xs text-white/70">Visualización destacando el punto exacto donde está el sensor (marcador rojo).</p>
+
+            <p className="mt-3 text-xs text-white/70">
+              Visualización destacando el punto exacto donde está el sensor (marcador rojo).
+            </p>
           </div>
+
         </div>
       </div>
 
+      {/* ===================== SECCIÓN 2 (abajo) ===================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Columna IZQUIERDA (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <LiveChart title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
-                     unit="mm" valueKey="v" data={femSeries} now={now} windowSec={300} yMin={0} yMax={5}/>
-          <LiveChart title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
-                     unit="mm" valueKey="disp_mm" data={stream} now={now} windowSec={300} yMin={0} yMax={5}/>
+
+          {/* Gráfico 1 — Teórico (FEM) con autoscale */}
+          <LiveChart
+            title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
+            unit="mm"
+            valueKey="v"
+            data={femSeries}
+            now={now}
+            windowSec={300}
+            yMin={null}   // autoscale
+            yMax={null}   // autoscale
+          />
+
+          {/* Gráfico 2 — Real (disp_mm) */}
+          <LiveChart
+            title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
+            unit="mm"
+            valueKey="disp_mm"
+            data={stream}
+            now={now}
+            windowSec={300}
+            yMin={0}
+            yMax={5}
+          />
+
+          {/* Gráfico 3 — Predictivo (placeholder) */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm mb-2 font-semibold">GRÁFICO 3 — Desplazamiento predictivo (IA + FEM + Real)</div>
+            <div className="h-[180px] rounded-xl bg-black/30" />
+            <div className="mt-2 text-xs text-white/60">Comparación de curvas y umbrales.</div>
+          </div>
         </div>
+
+        {/* Columna DERECHA */}
         <div className="flex flex-col gap-6">
+          {/* Ely secundario */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
-              <video className="absolute inset-0 h-full w-full object-cover" src={ELY_VIDEO} autoPlay muted loop playsInline />
+              <video
+                className="absolute inset-0 h-full w-full object-cover"
+                src={ELY_VIDEO}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
               <div className="absolute inset-0 bg-black/30" />
             </div>
-            <div className="p-4 text-sm">Arriba, video de <strong>Ely</strong> explicando la predicción actual.</div>
+            <div className="p-4 text-sm">
+              Arriba, video de <strong>Ely</strong> explicando la predicción actual y
+              ofreciendo correr un escenario a 7 días.
+            </div>
           </div>
 
+          {/* Tarjeta explicativa */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
-            <p className="text-sm text-white/80">Comparación de curvas y umbrales. Alertas cuando sea necesario.</p>
+            <p className="text-sm text-white/80">
+              Aquí se mostrará cómo evoluciona la deflexión en tiempo real, comparada con el
+              modelo FEM y con las predicciones de IA. Si la predicción muestra riesgo,
+              se activará una alerta.
+            </p>
           </div>
         </div>
       </div>
@@ -144,7 +243,11 @@ export default function Dashboard() {
   );
 }
 
-function LiveChart({ title, unit = '', valueKey = 'value', data = [], now, windowSec = 60, yMin = 0, yMax = 1, height = 220 }) {
+/* ===================== COMPONENTE REUTILIZADO ===================== */
+function LiveChart({
+  title, unit = '', valueKey = 'value', data = [], now,
+  windowSec = 60, yMin = 0, yMax = 1, height = 220
+}) {
   const width = 640;
   const pad = { l: 48, r: 16, t: 16, b: 28 };
   const end = now;
@@ -153,16 +256,28 @@ function LiveChart({ title, unit = '', valueKey = 'value', data = [], now, windo
   const rows = (Array.isArray(data) ? data : [])
     .filter(d => d && typeof d.ts === 'number' && d.ts >= start && d.ts <= end);
 
-  let minV = yMin, maxV = yMax;
+  // --- cálculo de min/max con soporte para autoscale cuando yMin/yMax son null ---
+  let minV, maxV;
   const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
+
   if (vals.length) {
-    minV = yMin ?? Math.min(...vals);
-    maxV = yMax ?? Math.max(...vals);
-    if (minV === maxV) { minV -= 1; maxV += 1; }
+    minV = (yMin ?? Math.min(...vals));
+    maxV = (yMax ?? Math.max(...vals));
+    if (minV === maxV) { minV -= 1; maxV += 1; } // evita rango cero
+  } else {
+    // sin datos: usa defaults (o lo que te pasen)
+    minV = (yMin ?? 0);
+    maxV = (yMax ?? 1);
   }
 
-  const xScale = (ts) => pad.l + ((ts - start) / (end - start || 1)) * (width - pad.l - pad.r);
-  const yScale = (v)  => pad.t + (1 - ((v - minV) / (maxV - minV || 1))) * (height - pad.t - pad.b);
+  const xScale = (ts) => {
+    const f = (ts - start) / (end - start || 1);
+    return pad.l + f * (width - pad.l - pad.r);
+  };
+  const yScale = (v) => {
+    const f = (v - minV) / (maxV - minV || 1);
+    return pad.t + (1 - f) * (height - pad.t - pad.b);
+  };
 
   const points = rows
     .filter(r => Number.isFinite(Number(r[valueKey])))
@@ -179,10 +294,15 @@ function LiveChart({ title, unit = '', valueKey = 'value', data = [], now, windo
         <h3 className="text-lg font-semibold">{title}</h3>
         <div className="text-xs text-neutral-400">Window: {windowSec}s</div>
       </div>
+
       <div className="h-56 w-full">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-          {xTicks.map((t, i) => <line key={`x${i}`} x1={xScale(t)} x2={xScale(t)} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.12" />)}
-          {yTicks.map((v, i) => <line key={`y${i}`} x1={pad.l} x2={width - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="currentColor" opacity="0.12" />)}
+          {xTicks.map((t, i) => (
+            <line key={`x${i}`} x1={xScale(t)} x2={xScale(t)} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.12" />
+          ))}
+          {yTicks.map((v, i) => (
+            <line key={`y${i}`} x1={pad.l} x2={width - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="currentColor" opacity="0.12" />
+          ))}
           <line x1={pad.l} x2={width - pad.r} y1={height - pad.b} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
           <line x1={pad.l} x2={pad.l} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
           {xTicks.map((t, i) => (
@@ -201,4 +321,5 @@ function LiveChart({ title, unit = '', valueKey = 'value', data = [], now, windo
     </div>
   );
 }
+
 
