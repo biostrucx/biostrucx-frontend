@@ -80,7 +80,6 @@ export default function Dashboard() {
   const [interactive, setInteractive] = useState(true);
   const handleFit = () => {
     // Si tu FEMViewer expone un método imperativo, puedes conectarlo aquí con ref.
-    // De momento dejamos el botón como "hint" visual.
   };
 
   /* ====== FETCHS ====== */
@@ -163,11 +162,10 @@ export default function Dashboard() {
       const n = Number(v);
       if (Number.isFinite(n)) { if (n < min) min = n; if (n > max) max = n; }
     }
-    // valores suelen venir en mm; no transformo unidades
     return { min, max };
   }, [fem]);
 
-  // último valor serie FEM (para mostrar en tarjeta de sensor)
+  // último valor serie FEM
   const lastFemValue = useMemo(() => {
     if (!femSeries?.length) return null;
     return femSeries[femSeries.length - 1]?.v ?? null;
@@ -216,7 +214,6 @@ export default function Dashboard() {
           {/* ===== Tarjeta FEM — Análisis ===== */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-1 font-semibold">
-              {/* Título técnico con parámetros si existen */}
               FEM — Análisis (OpenSeesPy). Viga {femMeta.L ? `${toFixed(femMeta.L, 2)} m` : '25×25×1 m (demo)'}
               {Number.isFinite(femMeta.PkN) && <> | Carga: {toFixed(femMeta.PkN)} kN</>}
               {Number.isFinite(femMeta.E) && <> | E: {toFixed(femMeta.E)} GPa</>}
@@ -229,7 +226,6 @@ export default function Dashboard() {
                   <FEMViewer
                     viz={fem.viz}
                     height={220}
-                    /* Nuevos props no rompen si FEMViewer no los usa */
                     scale={scale}
                     showUndeformed={showUndeformed}
                     showSupports={true}
@@ -274,7 +270,7 @@ export default function Dashboard() {
                     scale={scale}
                     showUndeformed={showUndeformed}
                     interactive={interactive}
-                    showSensorPin={true}     /* si tu viewer lo implementa, dibuja pin/📍 */
+                    showSensorPin={true}
                   />
                   {/* Etiqueta del sensor + último valor FEM si existe */}
                   <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-2 py-1 rounded">
@@ -292,7 +288,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Reutiliza la misma toolbar para consistencia */}
             <FemToolbar
               scale={scale} setScale={setScale}
               showUndeformed={showUndeformed} setShowUndeformed={setShowUndeformed}
@@ -313,7 +308,7 @@ export default function Dashboard() {
         {/* Columna IZQUIERDA (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
 
-          {/* Gráfico 1 — Teórico (FEM) */}
+          {/* Gráfico 1 — Teórico (FEM) -> AUTOESCALA para que se vea SIEMPRE */}
           <LiveChart
             title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
             unit="mm"
@@ -321,11 +316,14 @@ export default function Dashboard() {
             data={femSeries}
             now={now}
             windowSec={300}
-            yMin={0}
-            yMax={5}
+            /* yMin/yMax = null => autoscale con padding y minSpan interno */
+            yMin={null}
+            yMax={null}
+            showZeroLine
+            highlightLast
           />
 
-          {/* Gráfico 2 — Real (disp_mm) */}
+          {/* Gráfico 2 — Real (disp_mm) -> escala fija 0..5 mm (SIN cambios) */}
           <LiveChart
             title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
             unit="mm"
@@ -374,7 +372,16 @@ export default function Dashboard() {
 /* ===================== COMPONENTE REUTILIZADO ===================== */
 function LiveChart({
   title, unit = '', valueKey = 'value', data = [], now,
-  windowSec = 60, yMin = 0, yMax = 1, height = 220
+  windowSec = 60,
+  // yMin/yMax = null => AUTOESCALA; si ambos son número => escala fija
+  yMin = null,
+  yMax = null,
+  height = 220,
+  // ajustes de autoscale
+  minSpan = 0.2,   // mm mínimos de span para que se vea algo
+  padPct = 0.15,   // 15% de padding arriba/abajo
+  showZeroLine = false,
+  highlightLast = false,
 }) {
   const width = 640;
   const pad = { l: 48, r: 16, t: 16, b: 28 };
@@ -384,25 +391,57 @@ function LiveChart({
   const rows = (Array.isArray(data) ? data : [])
     .filter(d => d && typeof d.ts === 'number' && d.ts >= start && d.ts <= end);
 
-  let minV = yMin, maxV = yMax;
-  const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
-  if (vals.length) {
-    minV = yMin ?? Math.min(...vals);
-    maxV = yMax ?? Math.max(...vals);
-    if (minV === maxV) { minV -= 1; maxV += 1; }
+  let minV, maxV;
+
+  // ¿escala fija?
+  if (Number.isFinite(yMin) && Number.isFinite(yMax)) {
+    minV = yMin; maxV = yMax;
+  } else {
+    const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
+    if (vals.length) {
+      let vmin = Math.min(...vals);
+      let vmax = Math.max(...vals);
+      let range = vmax - vmin;
+
+      if (range < 1e-9) {
+        // todos iguales → abre ventana mínima alrededor del valor
+        const span = Math.max(Math.abs(vmax) * 0.2, minSpan); // >= minSpan
+        vmin = vmax - span;
+        vmax = vmax + span;
+      } else {
+        const padY = range * padPct;
+        vmin -= padY;
+        vmax += padY;
+        // asegura que 0 quede visible si está muy cerca
+        if (vmin > 0) vmin = Math.max(0, vmin - padY);
+        if (vmax < 0) vmax = Math.min(0, vmax + padY);
+      }
+      minV = vmin;
+      maxV = vmax;
+    } else {
+      minV = 0; maxV = 1; // por si no hay datos aún
+    }
   }
 
   const xScale = (ts) => pad.l + ((ts - start) / (end - start || 1)) * (width - pad.l - pad.r);
   const yScale = (v)  => pad.t + (1 - ((v - minV) / (maxV - minV || 1))) * (height - pad.t - pad.b);
 
-  const points = rows
+  const pointsArr = rows
     .filter(r => Number.isFinite(Number(r[valueKey])))
-    .map(r => `${xScale(r.ts)},${yScale(Number(r[valueKey]))}`)
-    .join(' ');
+    .map(r => ({ x: xScale(r.ts), y: yScale(Number(r[valueKey])) }));
+
+  const points = pointsArr.map(p => `${p.x},${p.y}`).join(' ');
 
   const ticksX = 5, ticksY = 5;
   const xTicks = Array.from({ length: ticksX + 1 }, (_, i) => start + (i * (end - start)) / ticksX);
   const yTicks = Array.from({ length: ticksY + 1 }, (_, i) => minV + (i * (maxV - minV)) / ticksY);
+
+  // ¿línea de referencia en 0?
+  const zeroInside = showZeroLine && minV < 0 && maxV > 0;
+  const y0 = yScale(0);
+
+  // último punto
+  const last = highlightLast && pointsArr.length ? pointsArr[pointsArr.length - 1] : null;
 
   return (
     <div className="rounded-2xl bg-neutral-900/70 p-4 shadow-lg">
@@ -413,14 +452,31 @@ function LiveChart({
 
       <div className="h-56 w-full">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+          {/* Grid */}
           {xTicks.map((t, i) => (
             <line key={`x${i}`} x1={xScale(t)} x2={xScale(t)} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.12" />
           ))}
           {yTicks.map((v, i) => (
             <line key={`y${i}`} x1={pad.l} x2={width - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="currentColor" opacity="0.12" />
           ))}
+          {/* Axes */}
           <line x1={pad.l} x2={width - pad.r} y1={height - pad.b} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
           <line x1={pad.l} x2={pad.l} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
+
+          {/* Línea 0 mm si corresponde */}
+          {zeroInside && (
+            <line
+              x1={pad.l}
+              x2={width - pad.r}
+              y1={y0}
+              y2={y0}
+              stroke="currentColor"
+              opacity="0.4"
+              strokeDasharray="4 4"
+            />
+          )}
+
+          {/* Tick labels */}
           {xTicks.map((t, i) => (
             <text key={`xt${i}`} x={xScale(t)} y={height - 6} textAnchor="middle" className="fill-neutral-400 text-[10px]">
               {new Date(t).toLocaleTimeString([], { hour12: false })}
@@ -431,10 +487,18 @@ function LiveChart({
               {Number(v.toFixed(2))}{unit && ` ${unit}`}
             </text>
           ))}
+
+          {/* Serie */}
           {points && <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />}
+
+          {/* Último punto destacado */}
+          {last && (
+            <circle cx={last.x} cy={last.y} r="3" fill="currentColor" opacity="0.9" />
+          )}
         </svg>
       </div>
     </div>
   );
 }
+
 
