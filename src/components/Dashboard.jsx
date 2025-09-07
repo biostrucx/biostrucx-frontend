@@ -1,9 +1,63 @@
-// src/components/Dashboard.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BASE } from '../services/api';
 import FEMViewer from './FEMViewer';
 
+/* ====================== UTILS ====================== */
+const toFixed = (v, n = 2) => (Number.isFinite(v) ? Number(v).toFixed(n) : '—');
+const kN = (pN) => (Number.isFinite(pN) ? (pN / 1000) : null);
+const GPa = (ePa) => (Number.isFinite(ePa) ? (ePa / 1e9) : null);
+
+/* Leyenda simple con gradiente azul→verde→rojo */
+function ColorLegend({ min, max, label = 'Desplazamiento (mm)' }) {
+  return (
+    <div className="mt-2">
+      <div className="flex items-center justify-between text-[11px] text-neutral-400 mb-1">
+        <span>{label}</span>
+        <span>{toFixed(min)} — {toFixed(max)} mm</span>
+      </div>
+      <div
+        className="h-2 w-full rounded"
+        style={{
+          background:
+            'linear-gradient(90deg, #2563eb 0%, #22c55e 50%, #ef4444 100%)',
+        }}
+      />
+    </div>
+  );
+}
+
+/* Mini toolbar para la tarjeta FEM */
+function FemToolbar({
+  scale, setScale,
+  showUndeformed, setShowUndeformed,
+  interactive, setInteractive,
+  onFit,
+}) {
+  const btn = 'px-2 py-1 rounded bg-white/10 hover:bg-white/15 text-xs';
+  const pill = (v) =>
+    `px-2 py-1 rounded text-xs ${scale === v ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1">
+        <span className="text-[11px] text-neutral-400">Deformada</span>
+        <button className={pill(1)} onClick={() => setScale(1)}>×1</button>
+        <button className={pill(10)} onClick={() => setScale(10)}>×10</button>
+        <button className={pill(50)} onClick={() => setScale(50)}>×50</button>
+        <button className={pill(100)} onClick={() => setScale(100)}>×100</button>
+      </div>
+      <button className={btn} onClick={() => setShowUndeformed((s) => !s)}>
+        {showUndeformed ? 'Ocultar ref.' : 'Ver ref.'}
+      </button>
+      <button className={btn} onClick={() => setInteractive((s) => !s)}>
+        {interactive ? 'Bloquear pan/zoom' : 'Pan/zoom ON'}
+      </button>
+      <button className={btn} onClick={onFit}>Fit</button>
+    </div>
+  );
+}
+
+/* ====================== DASHBOARD ====================== */
 export default function Dashboard() {
   const { clientid } = useParams();
 
@@ -20,16 +74,18 @@ export default function Dashboard() {
   const [err, setErr] = useState('');
   const [now, setNow] = useState(Date.now());
 
-  // === Persistencia de factor de deformación FEM ===
-  const [femScale, setFemScale] = useState(() => {
-    const saved = Number(localStorage.getItem('femScale'));
-    return Number.isFinite(saved) ? saved : 50; // default
-  });
-  useEffect(() => {
-    localStorage.setItem('femScale', String(femScale));
-  }, [femScale]);
+  // Controles FEM (ambas tarjetas comparten estado para consistencia visual)
+  const [scale, setScale] = useState(50);
+  const [showUndeformed, setShowUndeformed] = useState(true);
+  const [interactive, setInteractive] = useState(true);
+  const handleFit = () => {
+    // Si tu FEMViewer expone un método imperativo, puedes conectarlo aquí con ref.
+    // De momento dejamos el botón como "hint" visual.
+  };
 
-  // ====== FETCHS ======
+  /* ====== FETCHS ====== */
+
+  // Sensores (real)
   async function fetchData() {
     try {
       setErr('');
@@ -48,6 +104,7 @@ export default function Dashboard() {
     }
   }
 
+  // FEM latest (para la tarjeta superior)
   async function fetchFem() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
@@ -58,6 +115,7 @@ export default function Dashboard() {
     }
   }
 
+  // FEM series (gráfico 1)
   async function fetchFemSeries() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/series?windowSec=300&limit=300`);
@@ -83,10 +141,37 @@ export default function Dashboard() {
 
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
 
-  // viz para la tarjeta “sensor” (mismo modelo + marker del sensor si existe)
-  const vizWithMarker = fem?.viz
-    ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] }
-    : null;
+  // viz + marker
+  const vizWithMarker = fem?.viz ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] } : null;
+
+  // Metadatos del modelo/carga para el título técnico
+  const femMeta = useMemo(() => {
+    const m = fem?.model || {};
+    const p = fem?.params || {};
+    const L = m.L_m ?? m.L ?? null;
+    const E = GPa(m.E_Pa ?? m.E ?? null);
+    const PkN = kN(p.P ?? p.load_N ?? null);
+    return { L, E, PkN, supports: m.supports || null, bc: m.bc || null };
+  }, [fem]);
+
+  // Rango de desplazamientos para leyenda
+  const uRange = useMemo(() => {
+    const arr = fem?.viz?.u_mag;
+    if (!Array.isArray(arr) || !arr.length) return { min: null, max: null };
+    let min = +Infinity, max = -Infinity;
+    for (const v of arr) {
+      const n = Number(v);
+      if (Number.isFinite(n)) { if (n < min) min = n; if (n > max) max = n; }
+    }
+    // valores suelen venir en mm; no transformo unidades
+    return { min, max };
+  }, [fem]);
+
+  // último valor serie FEM (para mostrar en tarjeta de sensor)
+  const lastFemValue = useMemo(() => {
+    if (!femSeries?.length) return null;
+    return femSeries[femSeries.length - 1]?.v ?? null;
+  }, [femSeries]);
 
   return (
     <div className="p-6">
@@ -97,9 +182,10 @@ export default function Dashboard() {
 
       {/* ===================== SECCIÓN 1 (arriba) ===================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
+
         {/* Columna IZQUIERDA */}
         <div className="flex flex-col gap-6">
-          {/* A1: Video Ely + mensaje */}
+          {/* A1: Video Ely + mensaje bienvenida */}
           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
@@ -126,58 +212,99 @@ export default function Dashboard() {
 
         {/* Columna DERECHA – FEM */}
         <div className="flex flex-col gap-6">
-          {/* FEM teórico (arriba) */}
+
+          {/* ===== Tarjeta FEM — Análisis ===== */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">
-              FEM — Análisis (OpenSeesPy). Viga 25×25×1 m (demo).
+            <div className="text-sm mb-1 font-semibold">
+              {/* Título técnico con parámetros si existen */}
+              FEM — Análisis (OpenSeesPy). Viga {femMeta.L ? `${toFixed(femMeta.L, 2)} m` : '25×25×1 m (demo)'}
+              {Number.isFinite(femMeta.PkN) && <> | Carga: {toFixed(femMeta.PkN)} kN</>}
+              {Number.isFinite(femMeta.E) && <> | E: {toFixed(femMeta.E)} GPa</>}
+              {femMeta.bc && <> | Condiciones: {String(femMeta.bc)}</>}
             </div>
 
-            <div className="h-[220px] rounded-xl bg-black/30">
-              {fem && fem.status === 'done'
-                ? <FEMViewer viz={fem.viz} height={220} scale={femScale} />
-                : (
-                  <div className="w-full h-full flex items-center justify-center text-sm">
-                    {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+            <div className="h-[220px] rounded-xl bg-black/30 relative">
+              {fem && fem.status === 'done' ? (
+                <>
+                  <FEMViewer
+                    viz={fem.viz}
+                    height={220}
+                    /* Nuevos props no rompen si FEMViewer no los usa */
+                    scale={scale}
+                    showUndeformed={showUndeformed}
+                    showSupports={true}
+                    showLoads={true}
+                    interactive={interactive}
+                  />
+                  {/* Leyenda */}
+                  <div className="absolute left-3 right-3 bottom-3">
+                    <ColorLegend min={uRange.min} max={uRange.max} />
                   </div>
-                )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm">
+                  {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+                </div>
+              )}
             </div>
 
-            {/* Controles de escala (persistentes) */}
-            <div className="mt-2 flex items-center gap-2 text-xs text-white/70">
-              <span className="opacity-80">Deformada ×{femScale}</span>
-              <button
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20"
-                onClick={() => setFemScale(s => Math.max(1, Math.round(s * 0.8)))}
-              >−</button>
-              <button
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20"
-                onClick={() => setFemScale(50)}
-              >Reset</button>
-              <button
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20"
-                onClick={() => setFemScale(s => Math.min(500, Math.round(s * 1.25)))}
-              >+</button>
-            </div>
+            {/* Toolbar */}
+            <FemToolbar
+              scale={scale} setScale={setScale}
+              showUndeformed={showUndeformed} setShowUndeformed={setShowUndeformed}
+              interactive={interactive} setInteractive={setInteractive}
+              onFit={handleFit}
+            />
 
             <p className="mt-3 text-xs text-white/70">
-              Aquí irá el render/imagen de la viga con cargas/condiciones.
+              Geometría no deformada (gris tenue) y deformada con factor ×{scale} si el viewer lo soporta.
             </p>
           </div>
 
-          {/* FEM con ubicación del sensor (abajo) */}
+          {/* ===== Tarjeta FEM — Ubicación del sensor ===== */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
+            <div className="text-sm mb-1 font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
 
-            <div className="h-[180px] rounded-xl bg-black/30">
-              {vizWithMarker
-                ? <FEMViewer viz={vizWithMarker} height={180} scale={femScale} />
-                : <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>}
+            <div className="h-[180px] rounded-xl bg-black/30 relative">
+              {vizWithMarker ? (
+                <>
+                  <FEMViewer
+                    viz={vizWithMarker}
+                    height={180}
+                    scale={scale}
+                    showUndeformed={showUndeformed}
+                    interactive={interactive}
+                    showSensorPin={true}     /* si tu viewer lo implementa, dibuja pin/📍 */
+                  />
+                  {/* Etiqueta del sensor + último valor FEM si existe */}
+                  <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-2 py-1 rounded">
+                    <span className="mr-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 border border-white/70 align-middle mr-1" />
+                      <strong>Sensor:</strong> BSX–FARADAY1
+                    </span>
+                    {Number.isFinite(lastFemValue) && (
+                      <span className="text-neutral-300">| FEM: {toFixed(lastFemValue)} mm</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>
+              )}
             </div>
 
+            {/* Reutiliza la misma toolbar para consistencia */}
+            <FemToolbar
+              scale={scale} setScale={setScale}
+              showUndeformed={showUndeformed} setShowUndeformed={setShowUndeformed}
+              interactive={interactive} setInteractive={setInteractive}
+              onFit={handleFit}
+            />
+
             <p className="mt-3 text-xs text-white/70">
-              Visualización destacando el punto exacto donde está el sensor (marcador rojo).
+              El marcador rojo indica la posición del sensor sobre la viga. Tooltip/📍 pueden activarse en el viewer.
             </p>
           </div>
+
         </div>
       </div>
 
@@ -185,7 +312,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna IZQUIERDA (2/3) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Gráfico 1 — Teórico (FEM) con Y fijo 0..5 mm */}
+
+          {/* Gráfico 1 — Teórico (FEM) */}
           <LiveChart
             title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
             unit="mm"
@@ -193,10 +321,11 @@ export default function Dashboard() {
             data={femSeries}
             now={now}
             windowSec={300}
-            fixedY={[0, 5]}
+            yMin={0}
+            yMax={5}
           />
 
-          {/* Gráfico 2 — Real (disp_mm) con Y fijo 0..5 mm */}
+          {/* Gráfico 2 — Real (disp_mm) */}
           <LiveChart
             title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
             unit="mm"
@@ -204,7 +333,8 @@ export default function Dashboard() {
             data={stream}
             now={now}
             windowSec={300}
-            fixedY={[0, 5]}
+            yMin={0}
+            yMax={5}
           />
         </div>
 
@@ -224,8 +354,7 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-black/30" />
             </div>
             <div className="p-4 text-sm">
-              Arriba, video de <strong>Ely</strong> explicando la predicción actual y
-              ofreciendo correr un escenario a 7 días.
+              Arriba, video de <strong>Ely</strong> explicando la predicción actual.
             </div>
           </div>
 
@@ -233,9 +362,7 @@ export default function Dashboard() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
             <p className="text-sm text-white/80">
-              Aquí se mostrará cómo evoluciona la deflexión en tiempo real, comparada con el
-              modelo FEM y con las predicciones de IA. Si la predicción muestra riesgo,
-              se activará una alerta.
+              Comparación de curvas y umbrales. Alertas cuando sea necesario.
             </p>
           </div>
         </div>
@@ -247,9 +374,7 @@ export default function Dashboard() {
 /* ===================== COMPONENTE REUTILIZADO ===================== */
 function LiveChart({
   title, unit = '', valueKey = 'value', data = [], now,
-  windowSec = 60, height = 220,
-  fixedY,          // <- [min, max] para bloquear Y (p.ej. [0,5])
-  paddingPct = 0,  // padding en Y si NO usas fixedY (auto-escala)
+  windowSec = 60, yMin = 0, yMax = 1, height = 220
 }) {
   const width = 640;
   const pad = { l: 48, r: 16, t: 16, b: 28 };
@@ -259,31 +384,16 @@ function LiveChart({
   const rows = (Array.isArray(data) ? data : [])
     .filter(d => d && typeof d.ts === 'number' && d.ts >= start && d.ts <= end);
 
-  let minV, maxV;
-  if (Array.isArray(fixedY) && fixedY.length === 2 &&
-      fixedY.every(Number.isFinite) && fixedY[0] < fixedY[1]) {
-    // Y BLOQUEADO
-    [minV, maxV] = fixedY;
-  } else {
-    // AUTO-ESCALA CON PADDING
-    const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
-    if (vals.length) {
-      const vmin = Math.min(...vals);
-      const vmax = Math.max(...vals);
-      const range = Math.max(1e-9, vmax - vmin);
-      const padY = range * paddingPct;
-      minV = vmin - padY;
-      maxV = vmax + padY;
-      if (minV === maxV) { minV -= 1; maxV += 1; }
-    } else {
-      minV = 0; maxV = 1;
-    }
+  let minV = yMin, maxV = yMax;
+  const vals = rows.map(r => Number(r[valueKey])).filter(Number.isFinite);
+  if (vals.length) {
+    minV = yMin ?? Math.min(...vals);
+    maxV = yMax ?? Math.max(...vals);
+    if (minV === maxV) { minV -= 1; maxV += 1; }
   }
 
-  const xScale = (ts) =>
-    pad.l + ((ts - start) / (end - start || 1)) * (width - pad.l - pad.r);
-  const yScale = (v)  =>
-    pad.t + (1 - ((v - minV) / (maxV - minV || 1))) * (height - pad.t - pad.b);
+  const xScale = (ts) => pad.l + ((ts - start) / (end - start || 1)) * (width - pad.l - pad.r);
+  const yScale = (v)  => pad.t + (1 - ((v - minV) / (maxV - minV || 1))) * (height - pad.t - pad.b);
 
   const points = rows
     .filter(r => Number.isFinite(Number(r[valueKey])))
@@ -303,17 +413,14 @@ function LiveChart({
 
       <div className="h-56 w-full">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-          {/* Grid */}
           {xTicks.map((t, i) => (
             <line key={`x${i}`} x1={xScale(t)} x2={xScale(t)} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.12" />
           ))}
           {yTicks.map((v, i) => (
             <line key={`y${i}`} x1={pad.l} x2={width - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="currentColor" opacity="0.12" />
           ))}
-          {/* Axes */}
           <line x1={pad.l} x2={width - pad.r} y1={height - pad.b} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
           <line x1={pad.l} x2={pad.l} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
-          {/* Tick labels */}
           {xTicks.map((t, i) => (
             <text key={`xt${i}`} x={xScale(t)} y={height - 6} textAnchor="middle" className="fill-neutral-400 text-[10px]">
               {new Date(t).toLocaleTimeString([], { hour12: false })}
@@ -324,12 +431,10 @@ function LiveChart({
               {Number(v.toFixed(2))}{unit && ` ${unit}`}
             </text>
           ))}
-          {/* Data */}
           {points && <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />}
         </svg>
       </div>
     </div>
   );
 }
-
 
