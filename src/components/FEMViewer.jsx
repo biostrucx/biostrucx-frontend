@@ -43,8 +43,32 @@ export default function FEMViewer({
   // Handlers para cleanup
   const wheelHandlerRef = useRef(null);
   const pointerDownHandlerRef = useRef(null);
+  const wrapWheelHandlerRef = useRef(null);
+  const wrapTouchMoveHandlerRef = useRef(null);
 
-  // init
+  // Capturar rueda/touch en el WRAPPER en modo capture (bloquea scroll chaining)
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const stopWheel = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const stopTouchMove = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+    wrap.addEventListener("wheel", stopWheel, { passive: false, capture: true });
+    wrap.addEventListener("touchmove", stopTouchMove, { passive: false, capture: true });
+
+    wrapWheelHandlerRef.current = stopWheel;
+    wrapTouchMoveHandlerRef.current = stopTouchMove;
+
+    return () => {
+      if (wrapWheelHandlerRef.current)
+        wrap.removeEventListener("wheel", wrapWheelHandlerRef.current, { capture: true });
+      if (wrapTouchMoveHandlerRef.current)
+        wrap.removeEventListener("touchmove", wrapTouchMoveHandlerRef.current, { capture: true });
+    };
+  }, []);
+
+  // init Three.js
   useEffect(() => {
     const wrap = wrapRef.current;
     const scene = sceneRef.current;
@@ -54,18 +78,16 @@ export default function FEMViewer({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearAlpha(0);
 
-    // Asegura que gestos/rueda llegan al canvas y no a la página
+    // Asegura que gestos/rueda llegan al canvas (no a la página)
     renderer.domElement.style.touchAction = "none";
     renderer.domElement.tabIndex = 0;
 
-    // Capturar la rueda y evitar que el scroll de la página “robe” el zoom
+    // Capturar la rueda en el canvas (por si hay overlays)
     const onWheelCapture = (e) => {
       e.preventDefault();
       e.stopPropagation();
     };
-    const onPointerDown = () => {
-      renderer.domElement.focus();
-    };
+    const onPointerDown = () => renderer.domElement.focus();
     renderer.domElement.addEventListener("wheel", onWheelCapture, { passive: false });
     renderer.domElement.addEventListener("pointerdown", onPointerDown, { passive: true });
     wheelHandlerRef.current = onWheelCapture;
@@ -88,14 +110,11 @@ export default function FEMViewer({
     const controls = new OrbitControls(cam, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-
-    // Maniobrabilidad
     controls.enableZoom = true;
     controls.enablePan = true;
     controls.screenSpacePanning = true;
     controls.zoomSpeed = 1.2;
     controls.panSpeed = 0.8;
-
     controlsRef.current = controls;
 
     const onResize = () => {
@@ -119,14 +138,14 @@ export default function FEMViewer({
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", onResize);
-      controls.dispose();
-      // quitar listeners capturados
+      // quitar listeners del canvas
       if (renderer.domElement && wheelHandlerRef.current) {
         renderer.domElement.removeEventListener("wheel", wheelHandlerRef.current);
       }
       if (renderer.domElement && pointerDownHandlerRef.current) {
         renderer.domElement.removeEventListener("pointerdown", pointerDownHandlerRef.current);
       }
+      controls.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
@@ -226,15 +245,15 @@ export default function FEMViewer({
     const fov = THREE.MathUtils.degToRad(camera.fov);
     const dist = (r / Math.sin(fov / 2)) * 0.9;
 
-    // Límites de clipping y distancias de zoom muy permisivos
+    // Límites muy permisivos para acercar/alejar sin clipping
     camera.near = Math.max(r / 5000, 1e-6);
     camera.far = r * 2000;
     camera.updateProjectionMatrix();
 
     camera.position.set(center.x + dist * 0.9, center.y + dist * 0.6, center.z + dist * 0.9);
     controls.target.copy(center);
-    controls.minDistance = Math.max(r * 0.001, 1e-5); // puedes acercarte mucho
-    controls.maxDistance = r * 200;
+    controls.minDistance = Math.max(r * 0.001, 1e-5); // zoom muy cercano
+    controls.maxDistance = r * 200;                   // alejar bastante
     controls.update();
   }
 
@@ -293,12 +312,15 @@ export default function FEMViewer({
           borderRadius: 6,
           backdropFilter: "blur(4px)",
           cursor: "pointer",
+          pointerEvents: "auto",
         }}
+        className="fem-overlay-button"
       >
         Fit
       </button>
     </div>
   );
 }
+
 
 
