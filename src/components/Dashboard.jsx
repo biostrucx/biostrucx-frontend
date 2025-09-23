@@ -1,45 +1,54 @@
+// ================================================================
+// DASHBOARD BioStrucX Live — Diseño con Proporción Áurea (φ ≈ 1.618)
+// ================================================================
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BASE } from '../services/api';
 import FEMViewer from './FEMViewer';
 
-/* ====================== UTILS ====================== */
+// ================================================================
+// [UTILS] Formateadores y helpers numéricos
+// ================================================================
 const toFixed = (v, n = 2) => (Number.isFinite(v) ? Number(v).toFixed(n) : '—');
 const kN = (pN) => (Number.isFinite(pN) ? (pN / 1000) : null);
 const GPa = (ePa) => (Number.isFinite(ePa) ? (ePa / 1e9) : null);
 
-/* Leyenda simple con gradiente azul→verde→rojo */
+// ================================================================
+// [UI] Leyenda de colores (gradiente) — Fibonacci paddings/radios
+// ================================================================
 function ColorLegend({ min, max, label = 'Desplazamiento (mm)' }) {
   return (
-    <div className="mt-2">
-      <div className="flex items-center justify-between text-[11px] text-neutral-400 mb-1">
+    <div className="mt-[13px]">
+      <div className="flex items-center justify-between text-[11px] text-neutral-400 mb-[8px]">
         <span>{label}</span>
         <span>{toFixed(min)} — {toFixed(max)} mm</span>
       </div>
       <div
-        className="h-2 w-full rounded"
+        className="h-[8px] w-full rounded-[13px]"
         style={{
-          background:
-            'linear-gradient(90deg, #2563eb 0%, #22c55e 50%, #ef4444 100%)',
+          background: 'linear-gradient(90deg, #2563eb 0%, #22c55e 50%, #ef4444 100%)',
         }}
       />
     </div>
   );
 }
 
-/* Mini toolbar para la tarjeta FEM */
+// ================================================================
+// [UI] Mini-toolbar para tarjetas FEM — botones con 13/21 px
+// ================================================================
 function FemToolbar({
   scale, setScale,
   showUndeformed, setShowUndeformed,
   interactive, setInteractive,
   onFit,
 }) {
-  const btn = 'px-2 py-1 rounded bg-white/10 hover:bg-white/15 text-xs';
+  const btn = 'px-[13px] py-[8px] rounded-[13px] bg-white/10 hover:bg-white/15 text-xs';
   const pill = (v) =>
-    `px-2 py-1 rounded text-xs ${scale === v ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`;
+    `px-[13px] py-[8px] rounded-[13px] text-xs ${scale === v ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`;
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-1">
+    <div className="mt-[13px] flex flex-wrap items-center gap-[13px]">
+      <div className="flex items-center gap-[8px]">
         <span className="text-[11px] text-neutral-400">Deformada</span>
         <button className={pill(1)} onClick={() => setScale(1)}>×1</button>
         <button className={pill(10)} onClick={() => setScale(10)}>×10</button>
@@ -57,34 +66,42 @@ function FemToolbar({
   );
 }
 
-/* ====================== DASHBOARD ====================== */
+// ================================================================
+// [COMPONENTE PRINCIPAL] Dashboard con layout áureo 61.8% / 38.2%
+// ================================================================
 export default function Dashboard() {
   const { clientid } = useParams();
 
-  // Real (sensor)
+  // ------------------------------------------------------------
+  // [STATE] Sensores (real)
+  // ------------------------------------------------------------
   const [latest, setLatest] = useState(null);
   const [stream, setStream] = useState([]);
 
-  // FEM
+  // ------------------------------------------------------------
+  // [STATE] FEM (simulación)
+  // ------------------------------------------------------------
   const [fem, setFem] = useState(null);
   const [femSeries, setFemSeries] = useState([]);
 
-  // UI
+  // ------------------------------------------------------------
+  // [STATE] UI (carga/errores/tiempo)
+  // ------------------------------------------------------------
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [now, setNow] = useState(Date.now());
 
-  // Controles FEM (ambas tarjetas comparten estado para consistencia visual)
+  // ------------------------------------------------------------
+  // [STATE] Controles compartidos para FEM
+  // ------------------------------------------------------------
   const [scale, setScale] = useState(50);
   const [showUndeformed, setShowUndeformed] = useState(true);
   const [interactive, setInteractive] = useState(true);
-  const handleFit = () => {
-    // Si tu FEMViewer expone un método imperativo, puedes conectarlo aquí con ref.
-  };
+  const handleFit = () => { /* conectar ref de FEMViewer si aplica */ };
 
-  /* ====== FETCHS ====== */
-
-  // Sensores (real)
+  // ============================================================
+  // [DATA FETCH] Sensores y FEM
+  // ============================================================
   async function fetchData() {
     try {
       setErr('');
@@ -103,7 +120,6 @@ export default function Dashboard() {
     }
   }
 
-  // FEM latest (para la tarjeta superior)
   async function fetchFem() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/latest`);
@@ -114,7 +130,6 @@ export default function Dashboard() {
     }
   }
 
-  // FEM series (gráfico 1)
   async function fetchFemSeries() {
     try {
       const r = await fetch(`${BASE}/api/simulations/${clientid}/series?windowSec=300&limit=300`);
@@ -138,12 +153,19 @@ export default function Dashboard() {
     return () => { clearInterval(id1); clearInterval(id2); clearInterval(id3); };
   }, [clientid]);
 
+  // ============================================================
+  // [MEDIA] Video Ely
+  // ============================================================
   const ELY_VIDEO = "https://res.cloudinary.com/di4esyfmv/video/upload/v1756592748/7670836-uhd_3840_2160_30fps_d7twsq.mp4";
 
-  // viz + marker
+  // ============================================================
+  // [VIZ] Marker para FEMViewer si no viene
+  // ============================================================
   const vizWithMarker = fem?.viz ? { ...fem.viz, marker: fem.viz.marker || [0.5, 0, 0] } : null;
 
-  // Metadatos del modelo/carga para el título técnico
+  // ============================================================
+  // [META] Título técnico FEM
+  // ============================================================
   const femMeta = useMemo(() => {
     const m = fem?.model || {};
     const p = fem?.params || {};
@@ -153,7 +175,9 @@ export default function Dashboard() {
     return { L, E, PkN, supports: m.supports || null, bc: m.bc || null };
   }, [fem]);
 
-  // Rango de desplazamientos para leyenda
+  // ============================================================
+  // [RANGO] Leyenda desplazamientos
+  // ============================================================
   const uRange = useMemo(() => {
     const arr = fem?.viz?.u_mag;
     if (!Array.isArray(arr) || !arr.length) return { min: null, max: null };
@@ -165,26 +189,39 @@ export default function Dashboard() {
     return { min, max };
   }, [fem]);
 
-  // último valor serie FEM
+  // ============================================================
+  // [SERIE] Último valor FEM para badge
+  // ============================================================
   const lastFemValue = useMemo(() => {
     if (!femSeries?.length) return null;
     return femSeries[femSeries.length - 1]?.v ?? null;
   }, [femSeries]);
 
+  // ============================================================
+  // [RENDER] Layout con proporción áurea
+  // ============================================================
   return (
     <div className="p-6">
+      {/* -------------------------------------------------------- */}
+      {/* [HEADER] Título */}
+      {/* -------------------------------------------------------- */}
       <h2 className="text-xl font-bold mb-4">BioStrucX Live — {clientid}</h2>
 
       {loading && <div>Cargando…</div>}
       {err && <div className="text-red-400">{err}</div>}
 
-      {/* ===================== SECCIÓN 1 (arriba) ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 transition-all duration-300">
+      {/* ======================================================= */}
+      {/* [SECCIÓN 1] GRID ÁUREO 61.8% / 38.2%                     */}
+      {/* ======================================================= */}
+      <div
+        className="grid grid-cols-1 gap-[34px] mb-[34px] transition-all duration-300
+                   md:[grid-template-columns:61.8%_38.2%]"
+      >
 
-        {/* Columna IZQUIERDA */}
-        <div className="flex flex-col gap-6">
-          {/* A1: Video Ely + mensaje bienvenida */}
-          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+        {/* --------------------- IZQUIERDA (61.8%) --------------------- */}
+        <div className="flex flex-col gap-[34px]">
+          {/* [A1] Video Ely + bienvenida */}
+          <div className="rounded-[21px] border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
                 className="absolute inset-0 h-full w-full object-cover"
@@ -196,31 +233,31 @@ export default function Dashboard() {
               />
               <div className="absolute inset-0 bg-black/30" />
             </div>
-            <div className="p-4 text-sm">
+            <div className="p-[13px] text-sm">
               CHAT CON LA IA DE BIOSTRUCX.AI LLAMADA <strong>ELY</strong>. HELLO WELCOME, cliente <strong>{clientid}</strong>.
             </div>
           </div>
 
-          {/* A2: Mapa 3D (placeholder) */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-3 font-semibold">Mapa 3D — ubicación del sensor</div>
-            <div className="h-[220px] rounded-xl bg-black/30" />
+          {/* [A2] Mapa 3D (placeholder) */}
+          <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
+            <div className="text-sm mb-[13px] font-semibold">Mapa 3D — ubicación del sensor</div>
+            <div className="h-[233px] rounded-[21px] bg-black/30" />
           </div>
         </div>
 
-        {/* Columna DERECHA – FEM */}
-        <div className="flex flex-col gap-6">
+        {/* --------------------- DERECHA (38.2%) ----------------------- */}
+        <div className="flex flex-col gap-[34px]">
 
-          {/* ===== Tarjeta FEM — Análisis ===== */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-1 font-semibold">
+          {/* [B1] FEM — Análisis */}
+          <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
+            <div className="text-sm mb-[8px] font-semibold">
               FEM — Análisis (OpenSeesPy). Viga {femMeta.L ? `${toFixed(femMeta.L, 2)} m` : '25×25×1 m (demo)'}
               {Number.isFinite(femMeta.PkN) && <> | Carga: {toFixed(femMeta.PkN)} kN</>}
               {Number.isFinite(femMeta.E) && <> | E: {toFixed(femMeta.E)} GPa</>}
               {femMeta.bc && <> | Condiciones: {String(femMeta.bc)}</>}
             </div>
 
-            <div className="h-[220px] rounded-xl bg-black/30 relative">
+            <div className="h-[220px] rounded-[21px] bg-black/30 relative">
               {fem && fem.status === 'done' ? (
                 <>
                   <FEMViewer
@@ -232,7 +269,6 @@ export default function Dashboard() {
                     showLoads={true}
                     interactive={interactive}
                   />
-                  {/* Leyenda */}
                   <div className="absolute left-3 right-3 bottom-3">
                     <ColorLegend min={uRange.min} max={uRange.max} />
                   </div>
@@ -244,7 +280,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Toolbar */}
             <FemToolbar
               scale={scale} setScale={setScale}
               showUndeformed={showUndeformed} setShowUndeformed={setShowUndeformed}
@@ -252,16 +287,16 @@ export default function Dashboard() {
               onFit={handleFit}
             />
 
-            <p className="mt-3 text-xs text-white/70">
+            <p className="mt-[13px] text-xs text-white/70">
               Geometría no deformada (gris tenue) y deformada con factor ×{scale} si el viewer lo soporta.
             </p>
           </div>
 
-          {/* ===== Tarjeta FEM — Ubicación del sensor ===== */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-1 font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
+          {/* [B2] FEM — Ubicación del sensor */}
+          <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
+            <div className="text-sm mb-[8px] font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
 
-            <div className="h-[180px] rounded-xl bg-black/30 relative">
+            <div className="h-[180px] rounded-[21px] bg-black/30 relative">
               {vizWithMarker ? (
                 <>
                   <FEMViewer
@@ -272,10 +307,9 @@ export default function Dashboard() {
                     interactive={interactive}
                     showSensorPin={true}
                   />
-                  {/* Etiqueta del sensor + último valor FEM si existe */}
-                  <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-2 py-1 rounded">
-                    <span className="mr-2">
-                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 border border-white/70 align-middle mr-1" />
+                  <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-[8px] py-[6px] rounded-[13px]">
+                    <span className="mr-[8px]">
+                      <span className="inline-block w-[8px] h-[8px] rounded-full bg-red-500 border border-white/70 align-middle mr-[6px]" />
                       <strong>Sensor:</strong> BSX–FARADAY1
                     </span>
                     {Number.isFinite(lastFemValue) && (
@@ -295,7 +329,7 @@ export default function Dashboard() {
               onFit={handleFit}
             />
 
-            <p className="mt-3 text-xs text-white/70">
+            <p className="mt-[13px] text-xs text-white/70">
               El marcador rojo indica la posición del sensor sobre la viga. Tooltip/📍 pueden activarse en el viewer.
             </p>
           </div>
@@ -303,12 +337,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ===================== SECCIÓN 2 (abajo) ===================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Columna IZQUIERDA (2/3) */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+      {/* ======================================================= */}
+      {/* [SECCIÓN 2] GRID INFERIOR — 2/3 + 1/3 (Fibonacci)        */}
+      {/* ======================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[34px]">
 
-          {/* Gráfico 1 — Teórico (FEM) -> AUTOESCALA para que se vea SIEMPRE */}
+        {/* --------------------- IZQUIERDA 2/3 ------------------------- */}
+        <div className="lg:col-span-2 flex flex-col gap-[34px]">
+          {/* [C1] Gráfico FEM — autoscale */}
           <LiveChart
             title="GRÁFICO 1 — Desplazamiento teórico (FEM) vs tiempo"
             unit="mm"
@@ -316,14 +352,13 @@ export default function Dashboard() {
             data={femSeries}
             now={now}
             windowSec={300}
-            /* yMin/yMax = null => autoscale con padding y minSpan interno */
             yMin={null}
             yMax={null}
             showZeroLine
             highlightLast
           />
 
-          {/* Gráfico 2 — Real (disp_mm) -> escala fija 0..5 mm (SIN cambios) */}
+          {/* [C2] Gráfico Real — 0..5 mm fijo */}
           <LiveChart
             title="GRÁFICO 2 — Real (disp_mm) vs tiempo"
             unit="mm"
@@ -336,10 +371,10 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Columna DERECHA */}
-        <div className="flex flex-col gap-6">
-          {/* Ely secundario */}
-          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+        {/* --------------------- DERECHA 1/3 --------------------------- */}
+        <div className="flex flex-col gap-[34px]">
+          {/* [D1] Video Ely secundario */}
+          <div className="rounded-[21px] border border-white/10 bg-black/40 overflow-hidden">
             <div className="relative aspect-video w-full">
               <video
                 className="absolute inset-0 h-full w-full object-cover"
@@ -351,14 +386,14 @@ export default function Dashboard() {
               />
               <div className="absolute inset-0 bg-black/30" />
             </div>
-            <div className="p-4 text-sm">
+            <div className="p-[13px] text-sm">
               Arriba, video de <strong>Ely</strong> explicando la predicción actual.
             </div>
           </div>
 
-          {/* Tarjeta explicativa */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm mb-2 font-semibold">Tarjeta de diagnóstico (explicación)</div>
+          {/* [D2] Tarjeta explicativa */}
+          <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
+            <div className="text-sm mb-[13px] font-semibold">Tarjeta de diagnóstico (explicación)</div>
             <p className="text-sm text-white/80">
               Comparación de curvas y umbrales. Alertas cuando sea necesario.
             </p>
@@ -369,14 +404,19 @@ export default function Dashboard() {
   );
 }
 
-/* ===================== COMPONENTE REUTILIZADO ===================== */
+// ================================================================
+// [COMPONENTE REUTILIZADO] LiveChart con alturas y márgenes áureos
+// - Altura: 233 px (≈ 144 × φ)
+// - Márgenes: 34/21 px (Fibonacci)
+// - Ticks: X=8, Y=5 (pareja Fibonacci)
+// ================================================================
 function LiveChart({
   title, unit = '', valueKey = 'value', data = [], now,
   windowSec = 60,
   // yMin/yMax = null => AUTOESCALA; si ambos son número => escala fija
   yMin = null,
   yMax = null,
-  height = 220,
+  height = 233,
   // ajustes de autoscale
   minSpan = 0.2,   // mm mínimos de span para que se vea algo
   padPct = 0.15,   // 15% de padding arriba/abajo
@@ -384,7 +424,7 @@ function LiveChart({
   highlightLast = false,
 }) {
   const width = 640;
-  const pad = { l: 48, r: 16, t: 16, b: 28 };
+  const pad = { l: 34, r: 21, t: 21, b: 34 }; // Fibonacci
   const end = now;
   const start = end - windowSec * 1000;
 
@@ -405,21 +445,20 @@ function LiveChart({
 
       if (range < 1e-9) {
         // todos iguales → abre ventana mínima alrededor del valor
-        const span = Math.max(Math.abs(vmax) * 0.2, minSpan); // >= minSpan
+        const span = Math.max(Math.abs(vmax) * 0.2, minSpan);
         vmin = vmax - span;
         vmax = vmax + span;
       } else {
         const padY = range * padPct;
         vmin -= padY;
         vmax += padY;
-        // asegura que 0 quede visible si está muy cerca
         if (vmin > 0) vmin = Math.max(0, vmin - padY);
         if (vmax < 0) vmax = Math.min(0, vmax + padY);
       }
       minV = vmin;
       maxV = vmax;
     } else {
-      minV = 0; maxV = 1; // por si no hay datos aún
+      minV = 0; maxV = 1;
     }
   }
 
@@ -432,25 +471,28 @@ function LiveChart({
 
   const points = pointsArr.map(p => `${p.x},${p.y}`).join(' ');
 
-  const ticksX = 5, ticksY = 5;
+  const ticksX = 8, ticksY = 5; // Fibonacci
   const xTicks = Array.from({ length: ticksX + 1 }, (_, i) => start + (i * (end - start)) / ticksX);
   const yTicks = Array.from({ length: ticksY + 1 }, (_, i) => minV + (i * (maxV - minV)) / ticksY);
 
-  // ¿línea de referencia en 0?
   const zeroInside = showZeroLine && minV < 0 && maxV > 0;
   const y0 = yScale(0);
-
-  // último punto
   const last = highlightLast && pointsArr.length ? pointsArr[pointsArr.length - 1] : null;
 
   return (
-    <div className="rounded-2xl bg-neutral-900/70 p-4 shadow-lg">
-      <div className="mb-2 flex items-baseline justify-between">
+    <div className="rounded-[21px] bg-neutral-900/70 p-[21px] shadow-lg">
+      {/* -------------------------------------------------------- */}
+      {/* [HEADER CHART] Título + ventana */}
+      {/* -------------------------------------------------------- */}
+      <div className="mb-[13px] flex items-baseline justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
         <div className="text-xs text-neutral-400">Window: {windowSec}s</div>
       </div>
 
-      <div className="h-56 w-full">
+      {/* -------------------------------------------------------- */}
+      {/* [SVG] Plot principal */}
+      {/* -------------------------------------------------------- */}
+      <div className="h-[233px] w-full">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
           {/* Grid */}
           {xTicks.map((t, i) => (
@@ -463,17 +505,9 @@ function LiveChart({
           <line x1={pad.l} x2={width - pad.r} y1={height - pad.b} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
           <line x1={pad.l} x2={pad.l} y1={pad.t} y2={height - pad.b} stroke="currentColor" opacity="0.6" />
 
-          {/* Línea 0 mm si corresponde */}
+          {/* Línea 0 mm */}
           {zeroInside && (
-            <line
-              x1={pad.l}
-              x2={width - pad.r}
-              y1={y0}
-              y2={y0}
-              stroke="currentColor"
-              opacity="0.4"
-              strokeDasharray="4 4"
-            />
+            <line x1={pad.l} x2={width - pad.r} y1={y0} y2={y0} stroke="currentColor" opacity="0.4" strokeDasharray="4 4" />
           )}
 
           {/* Tick labels */}
@@ -491,10 +525,8 @@ function LiveChart({
           {/* Serie */}
           {points && <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" />}
 
-          {/* Último punto destacado */}
-          {last && (
-            <circle cx={last.x} cy={last.y} r="3" fill="currentColor" opacity="0.9" />
-          )}
+          {/* Último punto */}
+          {last && <circle cx={last.x} cy={last.y} r="3" fill="currentColor" opacity="0.9" />}
         </svg>
       </div>
     </div>
