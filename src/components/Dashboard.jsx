@@ -1,5 +1,5 @@
 // ================================================================
-// DASHBOARD BioStrucX Live — Diseño con Proporción Áurea (φ ≈ 1.618)
+// DASHBOARD BioStrucX Live — Proporción Áurea (φ ≈ 1.618) + Fibonacci
 // ================================================================
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -13,6 +13,34 @@ import FEMViewer from './FEMViewer';
 const toFixed = (v, n = 2) => (Number.isFinite(v) ? Number(v).toFixed(n) : '—');
 const kN = (pN) => (Number.isFinite(pN) ? (pN / 1000) : null);
 const GPa = (ePa) => (Number.isFinite(ePa) ? (ePa / 1e9) : null);
+
+// ================================================================
+// [UI] AspectBox — mantiene un aspecto fijo (por defecto 1.618:1)
+// Usa ResizeObserver para calcular altura = ancho / ratio
+// ================================================================
+function AspectBox({ ratio = 1.618, className = '', children }) {
+  const ref = React.useRef(null);
+  const [box, setBox] = React.useState({ w: 0, h: 0 });
+
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      setBox({ w, h: w / ratio });
+    });
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [ratio]);
+
+  return (
+    <div ref={ref} className={className}>
+      {/* Fallback por si aún no midió */}
+      <div style={{ height: box.h || 0 }}>
+        {typeof children === 'function' ? children(box) : children}
+      </div>
+    </div>
+  );
+}
 
 // ================================================================
 // [UI] Leyenda de colores (gradiente) — Fibonacci paddings/radios
@@ -220,9 +248,9 @@ export default function Dashboard() {
 
         {/* --------------------- IZQUIERDA (61.8%) --------------------- */}
         <div className="flex flex-col gap-[34px]">
-          {/* [A1] Video Ely + bienvenida */}
+          {/* [A1] Video Ely + bienvenida (aspect 1.618/1) */}
           <div className="rounded-[21px] border border-white/10 bg-black/40 overflow-hidden">
-            <div className="relative aspect-video w-full">
+            <div className="relative aspect-[1.618/1] w-full">
               <video
                 className="absolute inset-0 h-full w-full object-cover"
                 src={ELY_VIDEO}
@@ -238,17 +266,17 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* [A2] Mapa 3D (placeholder) */}
+          {/* [A2] Mapa 3D (aspect 1.618/1) */}
           <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
             <div className="text-sm mb-[13px] font-semibold">Mapa 3D — ubicación del sensor</div>
-            <div className="h-[233px] rounded-[21px] bg-black/30" />
+            <div className="relative aspect-[1.618/1] rounded-[21px] bg-black/30" />
           </div>
         </div>
 
         {/* --------------------- DERECHA (38.2%) ----------------------- */}
         <div className="flex flex-col gap-[34px]">
 
-          {/* [B1] FEM — Análisis */}
+          {/* [B1] FEM — Análisis (AspectBox φ) */}
           <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
             <div className="text-sm mb-[8px] font-semibold">
               FEM — Análisis (OpenSeesPy). Viga {femMeta.L ? `${toFixed(femMeta.L, 2)} m` : '25×25×1 m (demo)'}
@@ -257,28 +285,34 @@ export default function Dashboard() {
               {femMeta.bc && <> | Condiciones: {String(femMeta.bc)}</>}
             </div>
 
-            <div className="h-[220px] rounded-[21px] bg-black/30 relative">
-              {fem && fem.status === 'done' ? (
+            {/* Contenedor con aspecto 1.618:1 + altura fluida al viewer */}
+            <AspectBox ratio={1.618} className="rounded-[21px] bg-black/30 relative overflow-hidden">
+              {({ h }) => (
                 <>
-                  <FEMViewer
-                    viz={fem.viz}
-                    height={220}
-                    scale={scale}
-                    showUndeformed={showUndeformed}
-                    showSupports={true}
-                    showLoads={true}
-                    interactive={interactive}
-                  />
-                  <div className="absolute left-3 right-3 bottom-3">
-                    <ColorLegend min={uRange.min} max={uRange.max} />
-                  </div>
+                  {fem && fem.status === 'done' ? (
+                    <>
+                      <FEMViewer
+                        viz={fem.viz}
+                        height={Math.max(180, Math.floor(h))} // un poco más alto para la principal
+                        scale={scale}
+                        showUndeformed={showUndeformed}
+                        showSupports={true}
+                        showLoads={true}
+                        interactive={interactive}
+                      />
+                      {/* Leyenda posicionada dentro del contenedor */}
+                      <div className="absolute left-3 right-3 bottom-3">
+                        <ColorLegend min={uRange.min} max={uRange.max} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center text-sm">
+                      {!fem ? 'sin modelo' : `estado: ${fem.status}`}
+                    </div>
+                  )}
                 </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm">
-                  {!fem ? 'sin modelo' : `estado: ${fem.status}`}
-                </div>
               )}
-            </div>
+            </AspectBox>
 
             <FemToolbar
               scale={scale} setScale={setScale}
@@ -292,35 +326,39 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* [B2] FEM — Ubicación del sensor */}
+          {/* [B2] FEM — Ubicación del sensor (AspectBox φ) */}
           <div className="rounded-[21px] border border-white/10 bg-white/5 p-[21px]">
             <div className="text-sm mb-[8px] font-semibold">FEM — Ubicación del sensor (BSX–FARADAY1)</div>
 
-            <div className="h-[180px] rounded-[21px] bg-black/30 relative">
-              {vizWithMarker ? (
+            <AspectBox ratio={1.618} className="rounded-[21px] bg-black/30 relative overflow-hidden">
+              {({ h }) => (
                 <>
-                  <FEMViewer
-                    viz={vizWithMarker}
-                    height={180}
-                    scale={scale}
-                    showUndeformed={showUndeformed}
-                    interactive={interactive}
-                    showSensorPin={true}
-                  />
-                  <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-[8px] py-[6px] rounded-[13px]">
-                    <span className="mr-[8px]">
-                      <span className="inline-block w-[8px] h-[8px] rounded-full bg-red-500 border border-white/70 align-middle mr-[6px]" />
-                      <strong>Sensor:</strong> BSX–FARADAY1
-                    </span>
-                    {Number.isFinite(lastFemValue) && (
-                      <span className="text-neutral-300">| FEM: {toFixed(lastFemValue)} mm</span>
-                    )}
-                  </div>
+                  {vizWithMarker ? (
+                    <>
+                      <FEMViewer
+                        viz={vizWithMarker}
+                        height={Math.max(140, Math.floor(h))}  // altura calculada (mín 140)
+                        scale={scale}
+                        showUndeformed={showUndeformed}
+                        interactive={interactive}
+                        showSensorPin={true}
+                      />
+                      <div className="absolute left-3 bottom-3 text-[12px] bg-black/40 px-[8px] py-[6px] rounded-[13px]">
+                        <span className="mr-[8px]">
+                          <span className="inline-block w-[8px] h-[8px] rounded-full bg-red-500 border border-white/70 align-middle mr-[6px]" />
+                          <strong>Sensor:</strong> BSX–FARADAY1
+                        </span>
+                        {Number.isFinite(lastFemValue) && (
+                          <span className="text-neutral-300">| FEM: {toFixed(lastFemValue)} mm</span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center text-sm">sin modelo</div>
+                  )}
                 </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-sm">sin modelo</div>
               )}
-            </div>
+            </AspectBox>
 
             <FemToolbar
               scale={scale} setScale={setScale}
@@ -373,9 +411,9 @@ export default function Dashboard() {
 
         {/* --------------------- DERECHA 1/3 --------------------------- */}
         <div className="flex flex-col gap-[34px]">
-          {/* [D1] Video Ely secundario */}
+          {/* [D1] Video Ely secundario (aspect 1.618/1) */}
           <div className="rounded-[21px] border border-white/10 bg-black/40 overflow-hidden">
-            <div className="relative aspect-video w-full">
+            <div className="relative aspect-[1.618/1] w-full">
               <video
                 className="absolute inset-0 h-full w-full object-cover"
                 src={ELY_VIDEO}
@@ -532,5 +570,4 @@ function LiveChart({
     </div>
   );
 }
-
 
