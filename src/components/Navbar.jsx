@@ -77,6 +77,18 @@ const Navbar = () => {
           >
             Global Warming
           </button>
+
+          {/* NEW: StrucX.ai external link (desktop) */}
+          <a
+            href="https://strucx.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="uppercase text-white/70 hover:text-white"
+            aria-label="Open StrucX.ai in a new tab"
+          >
+            StrucX.ai
+          </a>
+
           <button
             onClick={() => go('/dashboard/jeimie')}
             className="uppercase text-white hover:opacity-80 flex items-center"
@@ -126,6 +138,20 @@ const Navbar = () => {
               <MobileItem active={isLaunchpad} onClick={() => go('/launchpad')}>Launchpad</MobileItem>
               <MobileItem active={isGW} onClick={() => go('/global-warming')}>Global Warming</MobileItem>
 
+              {/* NEW: StrucX.ai external link (mobile) */}
+              <a
+                href="https://strucx.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between px-4 py-4 text-base rounded-xl
+                           text-white bg-white/5 hover:bg-white/10 active:bg-white/15 mt-2"
+                aria-label="Open StrucX.ai in a new tab"
+                onClick={() => setOpen(false)}
+              >
+                <span className="uppercase">StrucX.ai</span>
+                <span className="text-white/40 text-xs">opens new tab</span>
+              </a>
+
               <div className="mt-2 border-t border-white/10" />
               <button
                 onClick={() => go('/dashboard/jeimie')}
@@ -157,4 +183,5 @@ const MobileItem = ({ active, onClick, children }) => (
 );
 
 export default Navbar;
+
 
