@@ -8,7 +8,6 @@ import Launchpad from './components/Launchpad';
 import AboutUs from './components/AboutUs';   // ✅ rename (was Launchpad)
 import GlobalWarming from './components/GlobalWarming';
 
-import { Routes, Route } from "react-router-dom";
 import StrucxRedirect from "./pages/StrucxRedirect";
 
 export default function App() {
