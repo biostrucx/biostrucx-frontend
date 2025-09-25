@@ -8,6 +8,9 @@ import Launchpad from './components/Launchpad';
 import AboutUs from './components/AboutUs';   // ✅ rename (was Launchpad)
 import GlobalWarming from './components/GlobalWarming';
 
+import { Routes, Route } from "react-router-dom";
+import StrucxRedirect from "./pages/StrucxRedirect";
+
 export default function App() {
   return (
     <div className="bg-black text-white min-h-screen">
@@ -19,6 +22,7 @@ export default function App() {
         <Route path="/aboutus" element={<AboutUs />} />   {/* ✅ add route */}
         <Route path="/global-warming" element={<GlobalWarming />} />
         <Route path="*" element={<HeroSection />} />
+        <Route path="/strucx" element={<StrucxRedirect />} />
       </Routes>
     </div>
   );
